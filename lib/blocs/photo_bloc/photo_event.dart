@@ -50,9 +50,9 @@ class UpdatePhotoSettingsEvent extends PhotoEvent {
 
 /// Event to update only the aspect ratio setting.
 /// 
-/// Changes between 4:5 portrait and 1:1 square aspect ratios.
+/// Changes between different aspect ratios (4:5, 1:1, 16:9, 9:16, etc.).
 class UpdateAspectRatioEvent extends PhotoEvent {
-  final AspectRatioType aspectRatio;
+  final AspectRatio aspectRatio;
 
   const UpdateAspectRatioEvent(this.aspectRatio);
 

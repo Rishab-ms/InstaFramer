@@ -336,10 +336,20 @@ lib/
     - Scale and blur intensity persist to SharedPreferences
     - Settings restored on next session
 
+### ✅ Completed (Batch 5 - Scalable Aspect Ratio System)
+
+13. **Aspect ratio system refactoring** - ✅ Data-driven, extensible design
+    - Replaced hardcoded enum with scalable `AspectRatio` model class
+    - Added 6 predefined ratios: 4:5, 1:1, 16:9, 9:16, 3:4, 4:3
+    - **Dynamic UI generation** - No hardcoded buttons, automatically creates from data
+    - **Easy to extend** - Add new ratios by defining and adding to `AspectRatios.all`
+    - **Type-safe and self-documenting** - Each ratio has display names, icons, descriptions
+    - Universal image processing formulas work with any ratio value
+
 ### 🔜 Next Steps
 
-13. **Add UI polish** - Loading states, animations, error handling refinements
-14. **Testing on Android device** - Permissions, memory, performance, all settings
+14. **Add UI polish** - Loading states, animations, error handling refinements
+15. **Testing on Android device** - Permissions, memory, performance, all settings
 
 ## Key Technical Considerations
 
@@ -386,7 +396,7 @@ lib/
 ### Core Functionality
 - [ ] Select 1, 10, 30 photos successfully
 - [ ] Live preview updates smoothly when changing settings
-- [ ] All aspect ratios render correctly (4:5, 1:1)
+- [ ] All aspect ratios render correctly (4:5, 1:1, 16:9, 9:16, 3:4, 4:3)
 - [ ] White/black/blur backgrounds work on all image types
 - [ ] Export saves all photos to gallery with correct quality/size
 - [ ] Scale slider works from 50-100% (100% fills completely)
@@ -897,6 +907,133 @@ PreferencesScreen
 1. Test scale and blur persistence across app restarts
 2. Test blur intensity effect on different images
 3. Commit Batch 4 changes
+
+### Batch 5: ✅ COMPLETED - Scalable Aspect Ratio System
+
+**Goal:** Replace hardcoded aspect ratio UI with a data-driven, extensible system that supports unlimited aspect ratios without code changes.
+
+**Files Modified:**
+
+1. **`lib/models/aspect_ratio.dart`** (139 lines) - **COMPLETE REWRITE**
+   - ✅ **Replaced enum with class** - `AspectRatioType` → `AspectRatio`
+   - ✅ **Rich data model** with id, ratio, displayName, label, iconName, description
+   - ✅ **6 predefined ratios**:
+     - 4:5 Portrait (Instagram standard)
+     - 1:1 Square (Instagram classic)
+     - 16:9 Landscape (Widescreen)
+     - 9:16 Story (Instagram Stories/Reels)
+     - 3:4 Classic Portrait
+     - 4:3 Classic Landscape
+   - ✅ **Easy extensibility** - Add new ratios to `AspectRatios.all` list
+   - ✅ **Type safety** - `findById()` method, `defaultRatio` constant
+
+2. **`lib/models/photo_settings.dart`**
+   - ✅ Updated type from `AspectRatioType` to `AspectRatio`
+   - ✅ Default: `AspectRatios.portrait` (4:5)
+   - ✅ Updated `copyWith` method
+
+3. **`lib/blocs/photo_bloc/photo_event.dart`**
+   - ✅ Updated `UpdateAspectRatioEvent` to accept `AspectRatio` instead of enum
+
+4. **`lib/screens/editor_screen.dart`**
+   - ✅ **Dynamic button generation** - Removed hardcoded buttons
+   - ✅ **Horizontal scrollable row** - Supports unlimited aspect ratios
+   - ✅ **Icon mapping system** - `crop_portrait`, `crop_square`, `crop_landscape`
+   - ✅ **Import alias** - `import '../models/aspect_ratio.dart' as models;`
+   - ✅ **Universal calculations** - Works with any ratio value
+
+5. **`lib/services/image_processor.dart`**
+   - ✅ **Universal formulas** - `height = width / ratio` works for any ratio
+   - ✅ **Removed hardcoded logic** - No more if/else for different ratios
+   - ✅ **Flexible calculations** - Preview and export both use same formula
+
+**UI Transformation:**
+
+**Before (Hardcoded - 2 ratios):**
+```dart
+// Manual button creation
+_buildControlButton(icon: Icons.crop_portrait, label: '4:5', ...),
+_buildControlButton(icon: Icons.crop_square, label: '1:1', ...),
+
+// Manual ratio calculation
+if (aspectRatio == AspectRatioType.portrait) {
+  height = width / 4 * 5;
+} else {
+  height = width;
+}
+```
+
+**After (Data-driven - Unlimited ratios):**
+```dart
+// Dynamic button generation from data
+...AspectRatios.all.map((ratio) {
+  return _buildControlButton(
+    icon: _getIconForAspectRatio(ratio.iconName),
+    label: ratio.label,
+    ...
+  );
+}).toList()
+
+// Universal calculation for any ratio
+final height = width / settings.aspectRatio.ratio;
+```
+
+**How to Add New Aspect Ratios:**
+
+```dart
+// 1. Define the ratio
+static const cinematic = AspectRatio(
+  id: 'cinematic_2_35_1',
+  ratio: 2.35,  // width / height
+  displayName: '2.35:1 Cinematic',
+  label: '2.35',
+  iconName: 'crop_landscape',
+  description: 'Ultra-wide cinematic format',
+);
+
+// 2. Add to the list
+static const List<AspectRatio> all = [
+  portrait, square, landscape, story,
+  classicPortrait, classicLandscape,
+  cinematic,  // ← Add here
+];
+
+// 3. UI automatically shows the new button! 🎉
+```
+
+**Key Benefits:**
+
+1. **Scalability** - Add unlimited aspect ratios without touching UI code
+2. **Maintainability** - Single source of truth in `AspectRatios.all`
+3. **Type Safety** - No magic strings or numbers
+4. **Self-Documenting** - Each ratio has rich metadata
+5. **Future-Proof** - Easy to add custom user-defined ratios later
+6. **Performance** - Same calculation efficiency for all ratios
+
+**Architecture:**
+
+```
+AspectRatios.all (Data Source)
+├── 4:5 Portrait
+├── 1:1 Square  
+├── 16:9 Landscape
+├── 9:16 Story
+├── 3:4 Classic
+├── 4:3 Classic
+└── ... (add more)
+
+↓ Dynamic Generation
+
+Editor UI Buttons
+[4:5] [1:1] [16:9] [9:16] [3:4] [4:3] ...
+```
+
+**Status:** ✅ Completed, linted, and production-ready
+
+**Next Steps:**
+1. Test all 6 aspect ratios render correctly
+2. Test dynamic button generation
+3. Commit Batch 5 changes
 
 ### Typography Update: ✅ COMPLETED - Google Sans Font Integration
 

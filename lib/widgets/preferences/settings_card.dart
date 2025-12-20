@@ -9,16 +9,12 @@ class SettingsCard extends StatelessWidget {
   /// The child widget to display inside the card
   final Widget child;
   
-  /// Whether to apply highlighted styling (colored background)
-  final bool isHighlighted;
-  
   /// Custom background color (overrides isHighlighted)
   final Color? backgroundColor;
 
   const SettingsCard({
     super.key,
     required this.child,
-    this.isHighlighted = false,
     this.backgroundColor,
   });
 
@@ -28,15 +24,19 @@ class SettingsCard extends StatelessWidget {
     
     if (backgroundColor != null) {
       cardColor = backgroundColor;
-    } else if (isHighlighted) {
-      cardColor = Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5);
+    } else {
+      cardColor = Theme.of(context).colorScheme.primaryContainer.withOpacity(0.25);
     }
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
       child: Card(
         color: cardColor,
-        elevation: isHighlighted ? 0 : null,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        ),
+        
         child: child,
       ),
     );

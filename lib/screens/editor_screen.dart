@@ -8,7 +8,7 @@ import 'package:photo_manager/photo_manager.dart';
 import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_event.dart';
 import '../blocs/photo_bloc/photo_state.dart';
-import '../models/aspect_ratio.dart';
+import '../models/aspect_ratio.dart' as models;
 import '../models/background_type.dart';
 import '../screens/preferences_screen.dart';
 import '../services/image_processor.dart';
@@ -166,9 +166,7 @@ class _EditorScreenState extends State<EditorScreen> {
           Expanded(
             child: Center(
               child: AspectRatio(
-                aspectRatio: settings.aspectRatio == AspectRatioType.portrait
-                    ? 4 / 5
-                    : 1 / 1,
+                aspectRatio: settings.aspectRatio.ratio,
                 child: _buildPhotoCarousel(context, state),
               ),
             ),
@@ -304,9 +302,7 @@ class _EditorScreenState extends State<EditorScreen> {
           // Display the processed preview
           // Wrap in AspectRatio to maintain proper dimensions in carousel
           return AspectRatio(
-            aspectRatio: settings.aspectRatio == AspectRatioType.portrait
-                ? 4 / 5
-                : 1 / 1,
+            aspectRatio: settings.aspectRatio.ratio,
             child: Image.memory(
               snapshot.data!,
               fit: BoxFit.contain,
@@ -349,6 +345,9 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   /// Build quick controls bar (aspect ratio and background).
+  /// 
+  /// Dynamically generates buttons for all available aspect ratios and
+  /// background types. Add new ratios to AspectRatios.all to see them here.
   Widget _buildQuickControls(BuildContext context, dynamic settings) {
     final theme = Theme.of(context);
 
@@ -360,74 +359,88 @@ class _EditorScreenState extends State<EditorScreen> {
           top: BorderSide(color: theme.dividerColor, width: 1),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Aspect ratio selector
-          _buildControlButton(
-            context,
-            icon: Icons.crop_portrait,
-            label: '4:5',
-            isSelected: settings.aspectRatio == AspectRatioType.portrait,
-            onTap: () {
-              context.read<PhotoBloc>().add(
-                    const UpdateAspectRatioEvent(AspectRatioType.portrait),
-                  );
-            },
-          ),
-          _buildControlButton(
-            context,
-            icon: Icons.crop_square,
-            label: '1:1',
-            isSelected: settings.aspectRatio == AspectRatioType.square,
-            onTap: () {
-              context.read<PhotoBloc>().add(
-                    const UpdateAspectRatioEvent(AspectRatioType.square),
-                  );
-            },
-          ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            // Aspect ratio selector - dynamically generated
+            ...models.AspectRatios.all.map((ratio) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _buildControlButton(
+                  context,
+                  icon: _getIconForAspectRatio(ratio.iconName),
+                  label: ratio.label,
+                  isSelected: settings.aspectRatio.id == ratio.id,
+                  onTap: () {
+                    context.read<PhotoBloc>().add(
+                          UpdateAspectRatioEvent(ratio),
+                        );
+                  },
+                ),
+              );
+            }).toList(),
 
-          const SizedBox(width: 16),
-          const VerticalDivider(),
-          const SizedBox(width: 16),
+            const SizedBox(width: 8),
+            const VerticalDivider(),
+            const SizedBox(width: 8),
 
-          // Background type selector
-          _buildControlButton(
-            context,
-            icon: Icons.wb_sunny_outlined,
-            label: 'White',
-            isSelected: settings.backgroundType == BackgroundType.white,
-            onTap: () {
-              context.read<PhotoBloc>().add(
-                    const UpdateBackgroundTypeEvent(BackgroundType.white),
-                  );
-            },
-          ),
-          _buildControlButton(
-            context,
-            icon: Icons.nightlight_outlined,
-            label: 'Black',
-            isSelected: settings.backgroundType == BackgroundType.black,
-            onTap: () {
-              context.read<PhotoBloc>().add(
-                    const UpdateBackgroundTypeEvent(BackgroundType.black),
-                  );
-            },
-          ),
-          _buildControlButton(
-            context,
-            icon: Icons.blur_on,
-            label: 'Blur',
-            isSelected: settings.backgroundType == BackgroundType.extendedBlur,
-            onTap: () {
-              context.read<PhotoBloc>().add(
-                    const UpdateBackgroundTypeEvent(BackgroundType.extendedBlur),
-                  );
-            },
-          ),
-        ],
+            // Background type selector
+            _buildControlButton(
+              context,
+              icon: Icons.wb_sunny_outlined,
+              label: 'White',
+              isSelected: settings.backgroundType == BackgroundType.white,
+              onTap: () {
+                context.read<PhotoBloc>().add(
+                      const UpdateBackgroundTypeEvent(BackgroundType.white),
+                    );
+              },
+            ),
+            const SizedBox(width: 8),
+            _buildControlButton(
+              context,
+              icon: Icons.nightlight_outlined,
+              label: 'Black',
+              isSelected: settings.backgroundType == BackgroundType.black,
+              onTap: () {
+                context.read<PhotoBloc>().add(
+                      const UpdateBackgroundTypeEvent(BackgroundType.black),
+                    );
+              },
+            ),
+            const SizedBox(width: 8),
+            _buildControlButton(
+              context,
+              icon: Icons.blur_on,
+              label: 'Blur',
+              isSelected: settings.backgroundType == BackgroundType.extendedBlur,
+              onTap: () {
+                context.read<PhotoBloc>().add(
+                      const UpdateBackgroundTypeEvent(BackgroundType.extendedBlur),
+                    );
+              },
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  /// Get IconData from icon name string.
+  /// Maps aspect ratio icon names to Material icons.
+  IconData _getIconForAspectRatio(String iconName) {
+    switch (iconName) {
+      case 'crop_portrait':
+        return Icons.crop_portrait;
+      case 'crop_square':
+        return Icons.crop_square;
+      case 'crop_landscape':
+        return Icons.crop_landscape;
+      default:
+        return Icons.crop_free;
+    }
   }
 
   /// Build a control button with icon and label.

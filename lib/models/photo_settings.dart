@@ -6,14 +6,14 @@ import 'image_size.dart';
 /// Photo processing settings for framing and export.
 /// 
 /// Contains all parameters needed to process a photo:
-/// - Aspect ratio (4:5 portrait or 1:1 square)
+/// - Aspect ratio (scalable - 4:5, 1:1, 16:9, 9:16, etc.)
 /// - Scale (0.5-1.0, where 1.0 fills the frame completely)
 /// - Background type (white, black, or extended blur)
 /// - Blur intensity (1-100, only used when background is extended blur)
 /// - Image quality (1-100 JPEG quality)
 /// - Target dimensions for export
 class PhotoSettings extends Equatable {
-  final AspectRatioType aspectRatio;
+  final AspectRatio aspectRatio;
   final double scale; // 0.5 to 1.0 (100% = fill completely)
   final BackgroundType backgroundType;
   final int blurIntensity; // 1-100 (blur radius, only for extendedBlur background)
@@ -21,7 +21,7 @@ class PhotoSettings extends Equatable {
   final ImageSize imageSize;
 
   const PhotoSettings({
-    this.aspectRatio = AspectRatioType.portrait,
+    this.aspectRatio = AspectRatios.portrait,
     this.scale = 0.9,
     this.backgroundType = BackgroundType.white,
     this.blurIntensity = 25,
@@ -40,7 +40,7 @@ class PhotoSettings extends Equatable {
       ];
 
   PhotoSettings copyWith({
-    AspectRatioType? aspectRatio,
+    AspectRatio? aspectRatio,
     double? scale,
     BackgroundType? backgroundType,
     int? blurIntensity,

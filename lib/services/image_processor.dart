@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:image/image.dart' as img;
 import '../models/photo_settings.dart';
-import '../models/aspect_ratio.dart';
 import '../models/background_type.dart';
 
 /// Image processor that uses isolates for off-main-thread processing.
@@ -111,34 +110,26 @@ class ImageProcessor {
 
   static _Size _calculateTargetSize(PhotoSettings settings) {
     final baseWidth = settings.imageSize.width;
-    final baseHeight = settings.imageSize.height;
-
-    // Adjust based on aspect ratio
-    if (settings.aspectRatio == AspectRatioType.portrait) {
-      // 4:5 ratio
-      final height = (baseWidth / 4 * 5).round();
-      return _Size(baseWidth, height);
-    } else {
-      // 1:1 ratio (square)
-      final size = baseWidth < baseHeight ? baseWidth : baseHeight;
-      return _Size(size, size);
-    }
+    final ratio = settings.aspectRatio.ratio;
+    
+    // Calculate height based on aspect ratio
+    // ratio = width / height, so height = width / ratio
+    final height = (baseWidth / ratio).round();
+    
+    return _Size(baseWidth, height);
   }
 
   /// Calculate preview dimensions (lower resolution for performance).
   static _Size _calculatePreviewSize(PhotoSettings settings) {
     // Use fixed preview width for consistent performance
     const previewWidth = 600;
+    final ratio = settings.aspectRatio.ratio;
     
     // Calculate height based on aspect ratio
-    if (settings.aspectRatio == AspectRatioType.portrait) {
-      // 4:5 ratio
-      final height = (previewWidth / 4 * 5).round();
-      return _Size(previewWidth, height);
-    } else {
-      // 1:1 ratio (square)
-      return _Size(previewWidth, previewWidth);
-    }
+    // ratio = width / height, so height = width / ratio
+    final height = (previewWidth / ratio).round();
+    
+    return _Size(previewWidth, height);
   }
 
   static img.Image _applyBackground(

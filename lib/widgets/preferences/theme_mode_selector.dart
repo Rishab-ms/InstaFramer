@@ -29,7 +29,6 @@ class ThemeModeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SettingsCard(
-      isHighlighted: true,
       child: Column(
         children: [
           RadioListTileOption<ThemeMode>(
