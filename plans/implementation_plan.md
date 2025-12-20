@@ -32,6 +32,7 @@ Add dependencies:
 - `photo_manager: ^3.0.0` + `wechat_assets_picker: ^9.0.0` - Multi-select gallery
 - `image: ^4.1.0` - Image processing (resize, crop, blur)
 - `card_swiper: ^3.0.1` - Carousel
+- `flex_color_scheme: ^7.3.1` - Advanced theming with Material 3
 - `gal: ^2.3.0` - Save to gallery
 - `path_provider: ^2.1.0` - Temp file storage
 - `shared_preferences: ^2.2.0` - Persist user preferences
@@ -198,13 +199,14 @@ Settings available:
 
 **Files:**
 
-- `lib/theme/app_theme.dart` - Material 3 theme (light & dark variants)
+- `lib/theme/app_theme.dart` - FlexColorScheme theme configuration with light & dark variants
 - `lib/widgets/aspect_ratio_toggle.dart`
 - `lib/widgets/background_selector.dart`
 - `lib/widgets/scale_slider.dart`
 
 Design principles:
 
+- Use FlexColorScheme for beautiful, consistent Material 3 theming
 - Respect user's theme preference (auto/light/dark)
 - Large touch targets (min 48x48)
 - Haptic feedback on selections
@@ -250,17 +252,34 @@ lib/
 
 ## Implementation Order
 
-1. **Setup dependencies and permissions** - Get gallery access working
-2. **Build BLoC architecture** - Events, states, models (Photo + Preferences)
-3. **Implement preferences storage** - SharedPreferences service + PreferencesBloc
-4. **Create preferences screen** - Theme, quality, size, feedback UI
-5. **Implement photo picker** - Multi-select with wechat_assets_picker
-6. **Create basic editor UI** - Carousel + control panel layout
-7. **Build image processor** - White/black backgrounds (respecting quality/size settings)
-8. **Add extended blur background** - Most complex processing
-9. **Implement live preview** - Wire up carousel to processor
-10. **Build export service** - Batch save to gallery with user's quality/size settings
-11. **Add UI polish** - Loading states, progress, error handling
+### ✅ Completed
+
+1. **Setup dependencies and permissions** - ✅ DONE
+   - Added all Flutter packages to pubspec.yaml
+   - Configured AndroidManifest.xml with photo access permissions
+   - Ran flutter pub get successfully
+
+2. **Build BLoC architecture** - ✅ DONE
+   - Created all data models (AspectRatio, BackgroundType, ImageSize, UserPreferences, PhotoSettings)
+   - Implemented PreferencesBloc with events/states for settings management
+   - Implemented PhotoBloc with events/states for photo editing workflow
+
+3. **Implement core services** - ✅ DONE
+   - PreferencesService: SharedPreferences with JSON serialization
+   - FeedbackService: Device info collection for email feedback
+   - ImageProcessor: Full image processing with white/black/blur backgrounds
+   - ExportService: Batch export with progress tracking and gallery saving
+
+### 🔜 In Progress
+
+4. **Create app theme** - Define Material 3 theme with light/dark variants
+5. **Build main app structure** - Setup MultiBlocProvider and routing in main.dart
+6. **Create home screen** - Landing page with "Select Photos" button
+7. **Implement photo picker** - Multi-select with wechat_assets_picker (max 30)
+8. **Create editor screen UI** - Carousel + control panel layout
+9. **Wire up live preview** - Connect carousel to image processor with caching
+10. **Create preferences screen** - Theme, quality, size, feedback settings UI
+11. **Add UI polish** - Loading states, progress dialogs, error handling, animations
 12. **Testing on Android device** - Permissions, memory, performance, all settings
 
 ## Key Technical Considerations
@@ -275,16 +294,41 @@ lib/
 
 ## Testing Checklist
 
+### Core Functionality
 - [ ] Select 1, 10, 30 photos successfully
 - [ ] Live preview updates smoothly when changing settings
 - [ ] All aspect ratios render correctly (4:5, 1:1)
 - [ ] White/black/blur backgrounds work on all image types
 - [ ] Export saves all photos to gallery with correct quality/size
+- [ ] Scale slider works from 0-100% (100% fills completely)
+
+### Permissions & Error Handling
 - [ ] App handles permission denial gracefully
+- [ ] Shows proper error messages for corrupt images
+- [ ] Handles max 30 photo limit validation
+
+### Settings & Preferences
 - [ ] Theme switching works (auto/light/dark) and persists
-- [ ] Image quality slider affects export file size
+- [ ] Image quality slider affects export file size (1-100%)
 - [ ] All image size presets work correctly
 - [ ] Custom image size accepts valid dimensions
 - [ ] Feedback email opens with pre-filled device info
 - [ ] Preferences persist across app restarts
+
+### Performance
+- [ ] No crashes on low-memory devices
+- [ ] Images process one at a time during export
+- [ ] Preview caching works efficiently
+- [ ] No memory leaks during long sessions
+
+## Git Commits Log
+
+### Commit 1: Initial Setup
+- ✅ Project scaffolding
+- ✅ Dependencies configuration
+- ✅ BLoC architecture (PreferencesBloc, PhotoBloc)
+- ✅ All data models
+- ✅ Core services (PreferencesService, FeedbackService, ImageProcessor, ExportService)
+- ✅ Android permissions
+- ✅ Removed unnecessary platform folders (windows, linux, macos)
 
