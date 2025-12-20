@@ -2,15 +2,34 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
 /// App theme configuration using FlexColorScheme for Material 3 design.
-/// Provides beautiful, consistent light and dark themes.
+/// Provides beautiful, consistent light and dark themes with a warm amber/sunset palette.
+/// 
+/// Color scheme inspired by natural sunset tones - warm oranges, golden ambers,
+/// and soft peachy hues that create a welcoming, Instagram-ready aesthetic.
 class AppTheme {
   // Private constructor to prevent instantiation
   AppTheme._();
 
-  /// Light theme configuration
+  // Warm sunset-inspired color palette
+  // These colors are extracted from the aesthetic of golden hour photography
+  static const Color _sunsetAmber = Color(0xFFF59E0B); // Primary - warm amber/orange
+  static const Color _goldenHour = Color(0xFFD97706); // Deeper sunset orange
+  static const Color _peachy = Color(0xFFFB923C); // Soft peach accent
+  // static const Color _warmTaupe = Color(0xFF92400E); // Earthy brown - reserved for future use
+
+  /// Light theme configuration with warm amber sunset tones
   static ThemeData light() {
     return FlexThemeData.light(
-      scheme: FlexScheme.materialBaseline,
+      colors: const FlexSchemeColor(
+        primary: _sunsetAmber,
+        primaryContainer: Color(0xFFFFEDD5), // Light peachy cream
+        secondary: _goldenHour,
+        secondaryContainer: Color(0xFFFED7AA), // Soft golden beige
+        tertiary: _peachy,
+        tertiaryContainer: Color(0xFFFFEDC3), // Warm cream
+        appBarColor: _sunsetAmber,
+        error: Color(0xFFDC2626), // Keep error red readable
+      ),
       surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
       blendLevel: 7,
       subThemesData: const FlexSubThemesData(
@@ -21,7 +40,7 @@ class AppTheme {
         alignedDropdown: true,
         useInputDecoratorThemeInDialogs: true,
         
-        // Button themes
+        // Button themes with slightly larger radius for modern feel
         elevatedButtonRadius: 12.0,
         filledButtonRadius: 12.0,
         outlinedButtonRadius: 12.0,
@@ -46,18 +65,23 @@ class AppTheme {
       visualDensity: FlexColorScheme.comfortablePlatformDensity,
       useMaterial3: true,
       swapLegacyOnMaterial3: true,
-      
-      // Custom colors for better contrast
-      primary: const Color(0xFF6750A4),
-      secondary: const Color(0xFF625B71),
-      tertiary: const Color(0xFF7D5260),
     );
   }
 
-  /// Dark theme configuration
+  /// Dark theme configuration with warm amber tones for night use
+  /// Maintains the warm aesthetic while being easy on the eyes in low light
   static ThemeData dark() {
     return FlexThemeData.dark(
-      scheme: FlexScheme.materialBaseline,
+      colors: const FlexSchemeColor(
+        primary: Color(0xFFFFBF66), // Lighter warm amber for dark mode
+        primaryContainer: Color(0xFF92400E), // Deep warm brown
+        secondary: Color(0xFFFFD699), // Soft golden glow
+        secondaryContainer: Color(0xFF7C2D12), // Deep burnt orange
+        tertiary: Color(0xFFFFCC99), // Warm peachy glow
+        tertiaryContainer: Color(0xFF9A3412), // Rich terracotta
+        appBarColor: Color(0xFFFFBF66),
+        error: Color(0xFFFFB4AB), // Softer red for dark mode
+      ),
       surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
       blendLevel: 13,
       subThemesData: const FlexSubThemesData(
@@ -92,11 +116,14 @@ class AppTheme {
       visualDensity: FlexColorScheme.comfortablePlatformDensity,
       useMaterial3: true,
       swapLegacyOnMaterial3: true,
-      
-      // Custom colors for better contrast in dark mode
-      primary: const Color(0xFFD0BCFF),
-      secondary: const Color(0xFFCCC2DC),
-      tertiary: const Color(0xFFEFB8C8),
+      // Add light color references to fix FlexColorScheme warnings
+      // These allow proper "fixed" color generation in dark mode
+      primary: const Color(0xFFFFBF66),
+      primaryLightRef: _sunsetAmber, // Reference to light mode primary
+      secondary: const Color(0xFFFFD699),
+      secondaryLightRef: _goldenHour, // Reference to light mode secondary
+      tertiary: const Color(0xFFFFCC99),
+      tertiaryLightRef: _peachy, // Reference to light mode tertiary
     );
   }
 
