@@ -3,85 +3,98 @@ import '../../services/preferences_service.dart';
 import 'preferences_event.dart';
 import 'preferences_state.dart';
 
+/// BLoC for managing user preferences and app settings.
+/// 
+/// Handles:
+/// - Loading and saving preferences from persistent storage
+/// - Theme mode (system/light/dark)
+/// - Image quality settings (1-100)
+/// - Image size presets and custom dimensions
 class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
   final PreferencesService _preferencesService;
 
   PreferencesBloc({required PreferencesService preferencesService})
       : _preferencesService = preferencesService,
-        super(const PreferencesInitial()) {
-    on<LoadPreferences>(_onLoadPreferences);
-    on<UpdateThemeMode>(_onUpdateThemeMode);
-    on<UpdateImageQuality>(_onUpdateImageQuality);
-    on<UpdateImageSizePreset>(_onUpdateImageSizePreset);
-    on<UpdateCustomImageSize>(_onUpdateCustomImageSize);
+        super(const PreferencesInitialState()) {
+    on<LoadPreferencesEvent>(_onLoadPreferences);
+    on<UpdateThemeModeEvent>(_onUpdateThemeMode);
+    on<UpdateImageQualityEvent>(_onUpdateImageQuality);
+    on<UpdateImageSizePresetEvent>(_onUpdateImageSizePreset);
+    on<UpdateCustomImageSizeEvent>(_onUpdateCustomImageSize);
   }
 
+  /// Load user preferences from persistent storage on app start.
+  /// Falls back to default preferences if none exist.
   Future<void> _onLoadPreferences(
-    LoadPreferences event,
+    LoadPreferencesEvent event,
     Emitter<PreferencesState> emit,
   ) async {
     try {
-      emit(const PreferencesLoading());
+      emit(const PreferencesLoadingState());
       final preferences = await _preferencesService.loadPreferences();
-      emit(PreferencesLoaded(preferences));
+      emit(PreferencesLoadedState(preferences));
     } catch (e) {
-      emit(PreferencesError('Failed to load preferences: $e'));
+      emit(PreferencesErrorState('Failed to load preferences: $e'));
     }
   }
 
+  /// Update theme mode and persist to storage.
   Future<void> _onUpdateThemeMode(
-    UpdateThemeMode event,
+    UpdateThemeModeEvent event,
     Emitter<PreferencesState> emit,
   ) async {
-    if (state is PreferencesLoaded) {
-      final currentState = state as PreferencesLoaded;
+    if (state is PreferencesLoadedState) {
+      final currentState = state as PreferencesLoadedState;
       final updatedPreferences = currentState.preferences.copyWith(
         themeMode: event.themeMode,
       );
       await _preferencesService.savePreferences(updatedPreferences);
-      emit(PreferencesLoaded(updatedPreferences));
+      emit(PreferencesLoadedState(updatedPreferences));
     }
   }
 
+  /// Update image quality setting and persist to storage.
   Future<void> _onUpdateImageQuality(
-    UpdateImageQuality event,
+    UpdateImageQualityEvent event,
     Emitter<PreferencesState> emit,
   ) async {
-    if (state is PreferencesLoaded) {
-      final currentState = state as PreferencesLoaded;
+    if (state is PreferencesLoadedState) {
+      final currentState = state as PreferencesLoadedState;
       final updatedPreferences = currentState.preferences.copyWith(
         imageQuality: event.quality,
       );
       await _preferencesService.savePreferences(updatedPreferences);
-      emit(PreferencesLoaded(updatedPreferences));
+      emit(PreferencesLoadedState(updatedPreferences));
     }
   }
 
+  /// Update image size preset and persist to storage.
   Future<void> _onUpdateImageSizePreset(
-    UpdateImageSizePreset event,
+    UpdateImageSizePresetEvent event,
     Emitter<PreferencesState> emit,
   ) async {
-    if (state is PreferencesLoaded) {
-      final currentState = state as PreferencesLoaded;
+    if (state is PreferencesLoadedState) {
+      final currentState = state as PreferencesLoadedState;
       final updatedPreferences = currentState.preferences.copyWith(
         imageSizePreset: event.preset,
       );
       await _preferencesService.savePreferences(updatedPreferences);
-      emit(PreferencesLoaded(updatedPreferences));
+      emit(PreferencesLoadedState(updatedPreferences));
     }
   }
 
+  /// Update custom image size and persist to storage.
   Future<void> _onUpdateCustomImageSize(
-    UpdateCustomImageSize event,
+    UpdateCustomImageSizeEvent event,
     Emitter<PreferencesState> emit,
   ) async {
-    if (state is PreferencesLoaded) {
-      final currentState = state as PreferencesLoaded;
+    if (state is PreferencesLoadedState) {
+      final currentState = state as PreferencesLoadedState;
       final updatedPreferences = currentState.preferences.copyWith(
         customImageSize: event.size,
       );
       await _preferencesService.savePreferences(updatedPreferences);
-      emit(PreferencesLoaded(updatedPreferences));
+      emit(PreferencesLoadedState(updatedPreferences));
     }
   }
 }

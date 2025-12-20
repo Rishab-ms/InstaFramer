@@ -55,19 +55,28 @@ Update `AndroidManifest.xml` with permissions:
 
 **Events:**
 
-- `LoadPhotosFromGallery` - Trigger photo picker
-- `PhotosSelected(List<AssetEntity>)` - Store selected photos
-- `UpdateSettings(aspectRatio, scale, bgType)` - Update processing settings
-- `ExportAllPhotos` - Batch process and save
+- `LoadPhotosFromGalleryEvent` - Trigger photo picker
+- `PhotosSelectedEvent(List<AssetEntity>)` - Store selected photos
+- `UpdatePhotoSettingsEvent(settings)` - Update processing settings
+- `UpdateAspectRatioEvent(aspectRatio)` - Update aspect ratio only
+- `UpdateScaleEvent(scale)` - Update scale only
+- `UpdateBackgroundTypeEvent(bgType)` - Update background only
+- `UpdateCurrentIndexEvent(index)` - Update carousel position
+- `ExportAllPhotosEvent` - Batch process and save
+- `ClearPhotosEvent` - Reset to initial state
+
+**Note:** All events end with "Event" suffix for clarity (BLoC newcomer friendly)
 
 **States:**
 
-- `PhotoInitial`
-- `PhotosLoading`
-- `PhotosLoaded(photos, settings, currentIndex)`
-- `PhotosProcessing(progress)`
-- `PhotosExported(count)`
-- `PhotoError(message)`
+- `PhotoInitialState` - No photos selected yet
+- `PhotosLoadingState` - Gallery picker is active
+- `PhotosLoadedState(photos, settings, currentIndex)` - Photos ready for editing
+- `PhotosProcessingState(progress)` - Batch export in progress
+- `PhotosExportedState(count)` - Export completed successfully
+- `PhotoErrorState(message)` - Error occurred
+
+**Note:** All states end with "State" suffix for clarity (BLoC newcomer friendly)
 
 **Settings Model:**
 
@@ -263,6 +272,9 @@ lib/
    - Created all data models (AspectRatio, BackgroundType, ImageSize, UserPreferences, PhotoSettings)
    - Implemented PreferencesBloc with events/states for settings management
    - Implemented PhotoBloc with events/states for photo editing workflow
+   - **All events follow "Event" suffix naming convention**
+   - **All states follow "State" suffix naming convention**
+   - **Fully documented with /// comments for all events, states, and BLoCs**
 
 3. **Implement core services** - ✅ DONE
    - PreferencesService: SharedPreferences with JSON serialization
@@ -270,15 +282,39 @@ lib/
    - ImageProcessor: Full image processing with white/black/blur backgrounds
    - ExportService: Batch export with progress tracking and gallery saving
 
+4. **Create app theme** - ✅ DONE
+   - Implemented Material 3 theme with FlexColorScheme
+   - Light and dark theme variants with custom colors
+   - Design system constants (spacing, radius, elevations, animations)
+   - Fully documented with /// comments
+
+5. **Build main app structure** - ✅ DONE
+   - Setup MultiBlocProvider with PreferencesBloc and PhotoBloc
+   - Theme mode respects user preferences
+   - Routing configured
+   - Fully documented with /// comments
+
+6. **Create home screen** - ✅ DONE
+   - Landing page with app branding and feature highlights
+   - "Select Photos" button with loading states
+   - Navigation to editor on photo selection
+   - Error handling with snackbars
+   - Fully documented with /// comments
+
+7. **Implement photo picker** - ✅ DONE
+   - Multi-select up to 30 photos with wechat_assets_picker
+   - Android permission handling (13+ and legacy)
+   - Custom themed picker matching app theme
+   - Permission denied dialogs with settings navigation
+   - Fully documented with /// comments
+
 ### 🔜 In Progress
 
-4. **Create app theme** - Define Material 3 theme with light/dark variants
-5. **Build main app structure** - Setup MultiBlocProvider and routing in main.dart
-6. **Create home screen** - Landing page with "Select Photos" button
-7. **Implement photo picker** - Multi-select with wechat_assets_picker (max 30)
-8. **Create editor screen UI** - Carousel + control panel layout
-9. **Wire up live preview** - Connect carousel to image processor with caching
-10. **Create preferences screen** - Theme, quality, size, feedback settings UI
+### 🔜 In Progress
+
+8. **Create editor screen UI** - Carousel + control panel layout (NEXT BATCH)
+9. **Wire up live preview** - Connect carousel to image processor with caching (NEXT BATCH)
+10. **Create preferences screen** - Theme, quality, size, feedback settings UI (NEXT BATCH)
 11. **Add UI polish** - Loading states, progress dialogs, error handling, animations
 12. **Testing on Android device** - Permissions, memory, performance, all settings
 
@@ -291,6 +327,29 @@ lib/
 - **Performance:** Cache processed previews at lower resolution for carousel (max 30 images, ~5-10MB total)
 - **Error Handling:** Graceful failures for corrupt images, permission denials
 - **Theme Persistence:** Load user's theme preference before MaterialApp builds
+
+## 📋 Development Rules (Open Source Project)
+
+### Incremental Development
+- ⚠️ **NEVER one-shot entire project** - Work in small, reviewable chunks
+- ✅ **Maximum 3 TODOs at a time** - Complete 2-3 tasks, then request user review
+- 🔍 **User review required** - Wait for user approval before continuing to next batch
+- 🧪 **Test incrementally** - Verify each batch works before moving forward
+
+### Documentation Standards (Open Source Ready)
+- 📝 **Use `///` documentation comments** for all public APIs (classes, methods, functions)
+- 💭 **Add reasoning comments** (`//`) to explain complex logic and non-obvious decisions
+- 📚 **Document parameters and returns** - Explain what inputs mean and what outputs contain
+- 🎯 **Include examples** where helpful - Show how to use complex APIs
+- ⚠️ **Document edge cases** - Explain how errors are handled and limitations
+- 🏗️ **Architecture comments** - Explain design decisions and patterns used
+
+### BLoC Naming Conventions (for BLoC newcomers)
+- 🏷️ **All Events end with "Event"** - e.g., `LoadPhotosFromGalleryEvent`, `PhotosSelectedEvent`
+- 🏷️ **All States end with "State"** - e.g., `PhotosLoadedState`, `PhotosProcessingState`
+- 📋 **Use descriptive event names** - Clear action verbs that describe what's happening
+- 📋 **Document each event/state** - Explain when it's dispatched/emitted and what it triggers
+- ✅ **Benefits**: Makes it immediately clear whether you're dealing with an event or state
 
 ## Testing Checklist
 

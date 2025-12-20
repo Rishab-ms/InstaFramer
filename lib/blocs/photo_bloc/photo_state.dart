@@ -2,6 +2,10 @@ import 'package:equatable/equatable.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../../models/photo_settings.dart';
 
+/// Base class for all photo-related states.
+/// 
+/// All PhotoBloc states extend this class and follow the naming convention
+/// of ending with "State" for clarity.
 abstract class PhotoState extends Equatable {
   const PhotoState();
 
@@ -9,20 +13,33 @@ abstract class PhotoState extends Equatable {
   List<Object?> get props => [];
 }
 
-class PhotoInitial extends PhotoState {
-  const PhotoInitial();
+/// Initial state before any photos are selected.
+/// 
+/// This is the default state when the app starts or after [ClearPhotosEvent].
+class PhotoInitialState extends PhotoState {
+  const PhotoInitialState();
 }
 
-class PhotosLoading extends PhotoState {
-  const PhotosLoading();
+/// Loading state while photo picker is active.
+/// 
+/// Transitions to this state when [LoadPhotosFromGalleryEvent] is dispatched.
+/// Shows loading indicator in UI until [PhotosSelectedEvent] completes.
+class PhotosLoadingState extends PhotoState {
+  const PhotosLoadingState();
 }
 
-class PhotosLoaded extends PhotoState {
+/// Main editing state when photos are loaded and ready for editing.
+/// 
+/// Contains:
+/// - [photos]: List of selected AssetEntity objects (1-30 photos)
+/// - [settings]: Current PhotoSettings (aspect ratio, scale, background)
+/// - [currentIndex]: Current photo index in carousel (0-based)
+class PhotosLoadedState extends PhotoState {
   final List<AssetEntity> photos;
   final PhotoSettings settings;
   final int currentIndex;
 
-  const PhotosLoaded({
+  const PhotosLoadedState({
     required this.photos,
     required this.settings,
     this.currentIndex = 0,
@@ -31,12 +48,14 @@ class PhotosLoaded extends PhotoState {
   @override
   List<Object?> get props => [photos, settings, currentIndex];
 
-  PhotosLoaded copyWith({
+  /// Create a copy of this state with updated fields.
+  /// Used for immutable state updates in BLoC.
+  PhotosLoadedState copyWith({
     List<AssetEntity>? photos,
     PhotoSettings? settings,
     int? currentIndex,
   }) {
-    return PhotosLoaded(
+    return PhotosLoadedState(
       photos: photos ?? this.photos,
       settings: settings ?? this.settings,
       currentIndex: currentIndex ?? this.currentIndex,
@@ -44,12 +63,16 @@ class PhotosLoaded extends PhotoState {
   }
 }
 
-class PhotosProcessing extends PhotoState {
+/// Processing state during batch export.
+/// 
+/// Emitted during [ExportAllPhotosEvent] to show export progress.
+/// [progress] is automatically calculated as current/total (0.0 to 1.0).
+class PhotosProcessingState extends PhotoState {
   final int current;
   final int total;
   final double progress;
 
-  const PhotosProcessing({
+  const PhotosProcessingState({
     required this.current,
     required this.total,
   }) : progress = current / total;
@@ -58,19 +81,27 @@ class PhotosProcessing extends PhotoState {
   List<Object?> get props => [current, total, progress];
 }
 
-class PhotosExported extends PhotoState {
+/// Success state after all photos are exported.
+/// 
+/// Shows completion message with [count] of exported photos.
+/// Automatically transitions back to [PhotosLoadedState] after 2 seconds.
+class PhotosExportedState extends PhotoState {
   final int count;
 
-  const PhotosExported(this.count);
+  const PhotosExportedState(this.count);
 
   @override
   List<Object?> get props => [count];
 }
 
-class PhotoError extends PhotoState {
+/// Error state when something goes wrong.
+/// 
+/// Contains error [message] to display to user.
+/// Can occur during photo selection, processing, or export.
+class PhotoErrorState extends PhotoState {
   final String message;
 
-  const PhotoError(this.message);
+  const PhotoErrorState(this.message);
 
   @override
   List<Object?> get props => [message];

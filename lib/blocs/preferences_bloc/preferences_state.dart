@@ -1,6 +1,10 @@
 import 'package:equatable/equatable.dart';
 import '../../models/user_preferences.dart';
 
+/// Base class for all preferences-related states.
+/// 
+/// All PreferencesBloc states extend this class and follow the naming
+/// convention of ending with "State" for clarity.
 abstract class PreferencesState extends Equatable {
   const PreferencesState();
 
@@ -8,27 +12,43 @@ abstract class PreferencesState extends Equatable {
   List<Object?> get props => [];
 }
 
-class PreferencesInitial extends PreferencesState {
-  const PreferencesInitial();
+/// Initial state before preferences are loaded.
+/// 
+/// This is the default state when PreferencesBloc is created.
+class PreferencesInitialState extends PreferencesState {
+  const PreferencesInitialState();
 }
 
-class PreferencesLoading extends PreferencesState {
-  const PreferencesLoading();
+/// Loading state while preferences are being loaded from storage.
+/// 
+/// Transitions to this state when [LoadPreferencesEvent] is dispatched.
+class PreferencesLoadingState extends PreferencesState {
+  const PreferencesLoadingState();
 }
 
-class PreferencesLoaded extends PreferencesState {
+/// Loaded state containing user preferences.
+/// 
+/// This is the main state containing all user settings:
+/// - Theme mode (system/light/dark)
+/// - Image quality (1-100)
+/// - Image size preset and custom size
+class PreferencesLoadedState extends PreferencesState {
   final UserPreferences preferences;
 
-  const PreferencesLoaded(this.preferences);
+  const PreferencesLoadedState(this.preferences);
 
   @override
   List<Object?> get props => [preferences];
 }
 
-class PreferencesError extends PreferencesState {
+/// Error state when preferences fail to load or save.
+/// 
+/// Contains error [message] to display to user.
+/// Falls back to default preferences on load error.
+class PreferencesErrorState extends PreferencesState {
   final String message;
 
-  const PreferencesError(this.message);
+  const PreferencesErrorState(this.message);
 
   @override
   List<Object?> get props => [message];

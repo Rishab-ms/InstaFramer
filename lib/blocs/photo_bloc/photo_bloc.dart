@@ -4,66 +4,79 @@ import 'photo_event.dart';
 import 'photo_state.dart';
 import '../../models/photo_settings.dart';
 
+/// BLoC for managing photo selection and editing workflow.
+/// 
+/// Handles:
+/// - Photo gallery selection
+/// - Photo settings (aspect ratio, scale, background)
+/// - Live preview state management
+/// - Batch export with progress tracking
 class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
   final ExportService _exportService;
 
   PhotoBloc({required ExportService exportService})
       : _exportService = exportService,
-        super(const PhotoInitial()) {
-    on<LoadPhotosFromGallery>(_onLoadPhotosFromGallery);
-    on<PhotosSelected>(_onPhotosSelected);
-    on<UpdatePhotoSettings>(_onUpdatePhotoSettings);
-    on<UpdateAspectRatio>(_onUpdateAspectRatio);
-    on<UpdateScale>(_onUpdateScale);
-    on<UpdateBackgroundType>(_onUpdateBackgroundType);
-    on<UpdateCurrentIndex>(_onUpdateCurrentIndex);
-    on<ExportAllPhotos>(_onExportAllPhotos);
-    on<ClearPhotos>(_onClearPhotos);
+        super(const PhotoInitialState()) {
+    on<LoadPhotosFromGalleryEvent>(_onLoadPhotosFromGallery);
+    on<PhotosSelectedEvent>(_onPhotosSelected);
+    on<UpdatePhotoSettingsEvent>(_onUpdatePhotoSettings);
+    on<UpdateAspectRatioEvent>(_onUpdateAspectRatio);
+    on<UpdateScaleEvent>(_onUpdateScale);
+    on<UpdateBackgroundTypeEvent>(_onUpdateBackgroundType);
+    on<UpdateCurrentIndexEvent>(_onUpdateCurrentIndex);
+    on<ExportAllPhotosEvent>(_onExportAllPhotos);
+    on<ClearPhotosEvent>(_onClearPhotos);
   }
 
+  /// Handle photo gallery picker launch.
+  /// Transitions to loading state - actual picking happens in UI layer.
   Future<void> _onLoadPhotosFromGallery(
-    LoadPhotosFromGallery event,
+    LoadPhotosFromGalleryEvent event,
     Emitter<PhotoState> emit,
   ) async {
-    emit(const PhotosLoading());
+    emit(const PhotosLoadingState());
   }
 
+  /// Handle photo selection from gallery.
+  /// Validates photo count (1-30) and transitions to loaded state.
   Future<void> _onPhotosSelected(
-    PhotosSelected event,
+    PhotosSelectedEvent event,
     Emitter<PhotoState> emit,
   ) async {
     if (event.photos.isEmpty) {
-      emit(const PhotoError('No photos selected'));
+      emit(const PhotoErrorState('No photos selected'));
       return;
     }
 
     if (event.photos.length > 30) {
-      emit(const PhotoError('Maximum 30 photos allowed'));
+      emit(const PhotoErrorState('Maximum 30 photos allowed'));
       return;
     }
 
-    emit(PhotosLoaded(
+    emit(PhotosLoadedState(
       photos: event.photos,
-      settings: const PhotoSettings(),
+      settings: const PhotoSettings(), // Default settings
     ));
   }
 
+  /// Update all photo settings at once.
   Future<void> _onUpdatePhotoSettings(
-    UpdatePhotoSettings event,
+    UpdatePhotoSettingsEvent event,
     Emitter<PhotoState> emit,
   ) async {
-    if (state is PhotosLoaded) {
-      final currentState = state as PhotosLoaded;
+    if (state is PhotosLoadedState) {
+      final currentState = state as PhotosLoadedState;
       emit(currentState.copyWith(settings: event.settings));
     }
   }
 
+  /// Update only the aspect ratio setting.
   Future<void> _onUpdateAspectRatio(
-    UpdateAspectRatio event,
+    UpdateAspectRatioEvent event,
     Emitter<PhotoState> emit,
   ) async {
-    if (state is PhotosLoaded) {
-      final currentState = state as PhotosLoaded;
+    if (state is PhotosLoadedState) {
+      final currentState = state as PhotosLoadedState;
       final updatedSettings = currentState.settings.copyWith(
         aspectRatio: event.aspectRatio,
       );
@@ -71,12 +84,13 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     }
   }
 
+  /// Update only the scale setting.
   Future<void> _onUpdateScale(
-    UpdateScale event,
+    UpdateScaleEvent event,
     Emitter<PhotoState> emit,
   ) async {
-    if (state is PhotosLoaded) {
-      final currentState = state as PhotosLoaded;
+    if (state is PhotosLoadedState) {
+      final currentState = state as PhotosLoadedState;
       final updatedSettings = currentState.settings.copyWith(
         scale: event.scale,
       );
@@ -84,12 +98,13 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     }
   }
 
+  /// Update only the background type setting.
   Future<void> _onUpdateBackgroundType(
-    UpdateBackgroundType event,
+    UpdateBackgroundTypeEvent event,
     Emitter<PhotoState> emit,
   ) async {
-    if (state is PhotosLoaded) {
-      final currentState = state as PhotosLoaded;
+    if (state is PhotosLoadedState) {
+      final currentState = state as PhotosLoadedState;
       final updatedSettings = currentState.settings.copyWith(
         backgroundType: event.backgroundType,
       );
@@ -97,52 +112,60 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     }
   }
 
+  /// Update the current photo index in carousel.
   Future<void> _onUpdateCurrentIndex(
-    UpdateCurrentIndex event,
+    UpdateCurrentIndexEvent event,
     Emitter<PhotoState> emit,
   ) async {
-    if (state is PhotosLoaded) {
-      final currentState = state as PhotosLoaded;
+    if (state is PhotosLoadedState) {
+      final currentState = state as PhotosLoadedState;
       emit(currentState.copyWith(currentIndex: event.index));
     }
   }
 
+  /// Export all photos with current settings.
+  /// 
+  /// Processes photos one at a time to avoid memory issues.
+  /// Emits progress updates via PhotosProcessingState.
   Future<void> _onExportAllPhotos(
-    ExportAllPhotos event,
+    ExportAllPhotosEvent event,
     Emitter<PhotoState> emit,
   ) async {
-    if (state is! PhotosLoaded) return;
+    if (state is! PhotosLoadedState) return;
 
-    final currentState = state as PhotosLoaded;
+    final currentState = state as PhotosLoadedState;
     try {
+      // Process photos and emit progress updates
       await for (final progress in _exportService.exportPhotos(
         photos: currentState.photos,
         settings: currentState.settings,
       )) {
-        emit(PhotosProcessing(
+        emit(PhotosProcessingState(
           current: progress,
           total: currentState.photos.length,
         ));
       }
 
-      emit(PhotosExported(currentState.photos.length));
+      // Export complete
+      emit(PhotosExportedState(currentState.photos.length));
       
-      // Return to loaded state after a brief moment
+      // Return to loaded state after brief display
       await Future.delayed(const Duration(seconds: 2));
       emit(currentState);
     } catch (e) {
-      emit(PhotoError('Export failed: $e'));
-      // Return to loaded state
+      emit(PhotoErrorState('Export failed: $e'));
+      // Return to loaded state so user can retry
       await Future.delayed(const Duration(seconds: 2));
       emit(currentState);
     }
   }
 
+  /// Clear all photos and reset to initial state.
   Future<void> _onClearPhotos(
-    ClearPhotos event,
+    ClearPhotosEvent event,
     Emitter<PhotoState> emit,
   ) async {
-    emit(const PhotoInitial());
+    emit(const PhotoInitialState());
   }
 }
 
