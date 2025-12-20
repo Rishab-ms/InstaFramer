@@ -41,9 +41,16 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: BlocConsumer<PhotoBloc, PhotoState>(
+        listenWhen: (previous, current) {
+          // Only navigate when transitioning TO PhotosLoadedState from a non-loaded state
+          // This prevents navigation during ongoing editor operations
+          return (previous is! PhotosLoadedState && current is PhotosLoadedState) ||
+                 current is PhotoErrorState;
+        },
         listener: (context, state) {
-          // Navigate to editor when photos are successfully loaded
+          // Navigate to editor when photos are successfully loaded (first time only)
           if (state is PhotosLoadedState) {
+            debugPrint("navigating to editor screen (initial photo selection)");
             Navigator.push(
               context,
               MaterialPageRoute(

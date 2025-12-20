@@ -10,8 +10,9 @@ import '../blocs/photo_bloc/photo_event.dart';
 import '../blocs/photo_bloc/photo_state.dart';
 import '../models/aspect_ratio.dart' as models;
 import '../models/background_type.dart';
-import '../screens/preferences_screen.dart';
 import '../services/image_processor.dart';
+import '../widgets/editor/editor_app_bar.dart';
+import '../widgets/editor/export_button.dart';
 
 /// Editor screen - displays carousel of photos with editing controls.
 ///
@@ -33,7 +34,7 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   // Image processor for generating previews
   final ImageProcessor _imageProcessor = ImageProcessor();
-  
+
   // Cache for processed preview images to avoid reprocessing
   // Key: "${photoId}_${aspectRatio}_${scale}_${bgType}_${blurIntensity}"
   final Map<String, Uint8List> _previewCache = {};
@@ -46,8 +47,9 @@ class _EditorScreenState extends State<EditorScreen> {
       listenWhen: (previous, current) {
         // Only trigger listener when transitioning TO export/error states
         // This ensures snackbar shows exactly once per action
-        return (previous is! PhotosExportedState && current is PhotosExportedState) ||
-               (previous is! PhotoErrorState && current is PhotoErrorState);
+        return (previous is! PhotosExportedState &&
+                current is PhotosExportedState) ||
+            (previous is! PhotoErrorState && current is PhotoErrorState);
       },
       // Rebuild when state changes to update carousel
       buildWhen: (previous, current) {
@@ -68,8 +70,7 @@ class _EditorScreenState extends State<EditorScreen> {
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 3),
               behavior: SnackBarBehavior.floating,
-          
-          
+
               action: SnackBarAction(
                 label: 'View',
                 textColor: Colors.white,
@@ -92,7 +93,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
             ),
           );
-          
+
           // Navigate back to home and clear photos after brief delay
           // This allows the snackbar to be visible for a moment
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -142,26 +143,35 @@ class _EditorScreenState extends State<EditorScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: Text('Edit Photos (${state.currentIndex + 1}/${state.photos.length})'),
-        actions: [
-          // App preferences/settings navigation
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PreferencesScreen(),
+      appBar: const EditorAppBar(),
+      body: Column(
+        children: [
+          // Photo counter above carousel
+          BlocSelector<
+            PhotoBloc,
+            PhotoState,
+            ({int currentIndex, int totalPhotos})
+          >(
+            selector: (state) {
+              if (state is PhotosLoadedState) {
+                return (
+                  currentIndex: state.currentIndex,
+                  totalPhotos: state.photos.length,
+                );
+              }
+              return (currentIndex: 0, totalPhotos: 0);
+            },
+            builder: (context, data) {
+              return Text(
+                '${data.currentIndex + 1} of ${data.totalPhotos}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
                 ),
               );
             },
-            tooltip: 'Settings',
           ),
-        ],
-      ),
-      body: Column(
-        children: [
+          const SizedBox(height: 8),
           // Photo carousel (sized to match aspect ratio)
           Expanded(
             child: Center(
@@ -183,7 +193,7 @@ class _EditorScreenState extends State<EditorScreen> {
             _buildBlurIntensitySlider(context, settings),
 
           // Export button at the bottom
-          _buildExportButton(context, state.photos.length),
+          const ExportButton(),
         ],
       ),
     );
@@ -196,6 +206,9 @@ class _EditorScreenState extends State<EditorScreen> {
       child: Swiper(
         itemCount: state.photos.length,
         index: state.currentIndex,
+        fade: 0.5,
+        allowImplicitScrolling: true,
+
         onIndexChanged: (index) {
           // Update current index in BLoC
           context.read<PhotoBloc>().add(UpdateCurrentIndexEvent(index));
@@ -214,11 +227,7 @@ class _EditorScreenState extends State<EditorScreen> {
           ),
         ),
         itemBuilder: (context, index) {
-          return _buildPhotoCard(
-            context,
-            state.photos[index],
-            state.settings,
-          );
+          return _buildPhotoCard(context, state.photos[index], state.settings);
         },
       ),
     );
@@ -234,12 +243,10 @@ class _EditorScreenState extends State<EditorScreen> {
     dynamic settings,
   ) {
     final theme = Theme.of(context);
-    
+
     return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      elevation: 0,color: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       clipBehavior: Clip.antiAlias,
       child: FutureBuilder<Uint8List?>(
         // Process the photo with actual settings for accurate preview
@@ -303,10 +310,7 @@ class _EditorScreenState extends State<EditorScreen> {
           // Wrap in AspectRatio to maintain proper dimensions in carousel
           return AspectRatio(
             aspectRatio: settings.aspectRatio.ratio,
-            child: Image.memory(
-              snapshot.data!,
-              fit: BoxFit.contain,
-            ),
+            child: Image.memory(snapshot.data!, fit: BoxFit.contain),
           );
         },
       ),
@@ -322,30 +326,31 @@ class _EditorScreenState extends State<EditorScreen> {
     dynamic settings,
   ) async {
     // Generate cache key based on photo ID and all relevant settings
-    final cacheKey = '${photo.id}_${settings.aspectRatio}_${settings.scale.toStringAsFixed(2)}_${settings.backgroundType}_${settings.blurIntensity}';
-    
+    final cacheKey =
+        '${photo.id}_${settings.aspectRatio}_${settings.scale.toStringAsFixed(2)}_${settings.backgroundType}_${settings.blurIntensity}';
+
     // Return cached preview if available
     if (_previewCache.containsKey(cacheKey)) {
       return _previewCache[cacheKey]!;
     }
-    
+
     // Process preview using optimized method (uses thumbnail, not full res)
     final previewBytes = await _imageProcessor.processPreview(photo, settings);
-    
+
     // Cache the result for instant retrieval on swipe-back
     _previewCache[cacheKey] = previewBytes;
-    
+
     // Limit cache size to prevent memory issues (keep last 10 previews)
     if (_previewCache.length > 10) {
       // Remove oldest entry (first key)
       _previewCache.remove(_previewCache.keys.first);
     }
-    
+
     return previewBytes;
   }
 
   /// Build quick controls bar (aspect ratio and background).
-  /// 
+  ///
   /// Dynamically generates buttons for all available aspect ratios and
   /// background types. Add new ratios to AspectRatios.all to see them here.
   Widget _buildQuickControls(BuildContext context, dynamic settings) {
@@ -355,9 +360,7 @@ class _EditorScreenState extends State<EditorScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainer,
-        border: Border(
-          top: BorderSide(color: theme.dividerColor, width: 1),
-        ),
+        border: Border(top: BorderSide(color: theme.dividerColor, width: 1)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -375,8 +378,8 @@ class _EditorScreenState extends State<EditorScreen> {
                   isSelected: settings.aspectRatio.id == ratio.id,
                   onTap: () {
                     context.read<PhotoBloc>().add(
-                          UpdateAspectRatioEvent(ratio),
-                        );
+                      UpdateAspectRatioEvent(ratio),
+                    );
                   },
                 ),
               );
@@ -394,8 +397,8 @@ class _EditorScreenState extends State<EditorScreen> {
               isSelected: settings.backgroundType == BackgroundType.white,
               onTap: () {
                 context.read<PhotoBloc>().add(
-                      const UpdateBackgroundTypeEvent(BackgroundType.white),
-                    );
+                  const UpdateBackgroundTypeEvent(BackgroundType.white),
+                );
               },
             ),
             const SizedBox(width: 8),
@@ -406,8 +409,8 @@ class _EditorScreenState extends State<EditorScreen> {
               isSelected: settings.backgroundType == BackgroundType.black,
               onTap: () {
                 context.read<PhotoBloc>().add(
-                      const UpdateBackgroundTypeEvent(BackgroundType.black),
-                    );
+                  const UpdateBackgroundTypeEvent(BackgroundType.black),
+                );
               },
             ),
             const SizedBox(width: 8),
@@ -415,11 +418,12 @@ class _EditorScreenState extends State<EditorScreen> {
               context,
               icon: Icons.blur_on,
               label: 'Blur',
-              isSelected: settings.backgroundType == BackgroundType.extendedBlur,
+              isSelected:
+                  settings.backgroundType == BackgroundType.extendedBlur,
               onTap: () {
                 context.read<PhotoBloc>().add(
-                      const UpdateBackgroundTypeEvent(BackgroundType.extendedBlur),
-                    );
+                  const UpdateBackgroundTypeEvent(BackgroundType.extendedBlur),
+                );
               },
             ),
           ],
@@ -464,9 +468,7 @@ class _EditorScreenState extends State<EditorScreen> {
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected
-                ? theme.colorScheme.primary
-                : theme.dividerColor,
+            color: isSelected ? theme.colorScheme.primary : theme.dividerColor,
             width: 2,
           ),
         ),
@@ -504,9 +506,7 @@ class _EditorScreenState extends State<EditorScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainer,
-        border: Border(
-          top: BorderSide(color: theme.dividerColor, width: 1),
-        ),
+        border: Border(top: BorderSide(color: theme.dividerColor, width: 1)),
       ),
       child: Row(
         children: [
@@ -554,9 +554,7 @@ class _EditorScreenState extends State<EditorScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer.withOpacity(0.3),
-        border: Border(
-          top: BorderSide(color: theme.dividerColor, width: 1),
-        ),
+        border: Border(top: BorderSide(color: theme.dividerColor, width: 1)),
       ),
       child: Row(
         children: [
@@ -574,7 +572,9 @@ class _EditorScreenState extends State<EditorScreen> {
               divisions: 99,
               label: '${settings.blurIntensity}',
               onChanged: (value) {
-                context.read<PhotoBloc>().add(UpdateBlurIntensityEvent(value.toInt()));
+                context.read<PhotoBloc>().add(
+                  UpdateBlurIntensityEvent(value.toInt()),
+                );
               },
             ),
           ),
@@ -596,40 +596,6 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// Build export button at the bottom.
-  Widget _buildExportButton(BuildContext context, int photoCount) {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: FilledButton.icon(
-        onPressed: () {
-          // Trigger export event
-          context.read<PhotoBloc>().add(const ExportAllPhotosEvent());
-        },
-        icon: const Icon(Icons.download),
-        label: Text('Export All Photos ($photoCount)'),
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          textStyle: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
     );
   }
@@ -658,7 +624,8 @@ class _EditorScreenState extends State<EditorScreen> {
                     child: CircularProgressIndicator(
                       value: state.progress,
                       strokeWidth: 8,
-                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
                       color: theme.colorScheme.primary,
                     ),
                   ),
@@ -703,4 +670,3 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 }
-
