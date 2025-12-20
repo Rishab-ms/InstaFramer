@@ -1,0 +1,41 @@
+name: insta_upload_helper
+description: "Instagram Photo Framing Helper - Batch process photos for Instagram"
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  flutter_bloc: ^8.1.3
+  equatable: ^2.0.5
+  
+  # Image Handling
+  photo_manager: ^3.0.0
+  wechat_assets_picker: ^9.0.0
+  image: ^4.1.0
+  
+  # UI Components
+  card_swiper: ^3.0.1
+  
+  # Storage & Export
+  gal: ^2.3.0
+  path_provider: ^2.1.0
+  shared_preferences: ^2.2.0
+  
+  # Feedback & Device Info
+  mailer: ^6.0.1
+  device_info_plus: ^10.0.0
+  package_info_plus: ^8.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
