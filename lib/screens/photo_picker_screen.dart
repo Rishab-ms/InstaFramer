@@ -49,7 +49,7 @@ class PhotoPickerScreen {
           requestType: RequestType.image, // Images only, no videos
           selectedAssets: const [],
           textDelegate: const EnglishAssetPickerTextDelegate(),
-          themeColor: Theme.of(context).colorScheme.primary,
+          // Only use pickerTheme (not themeColor) to avoid assertion error
           pickerTheme: _buildPickerTheme(context),
           specialItemPosition: SpecialItemPosition.prepend,
           specialItemBuilder: (context, path, length) {
