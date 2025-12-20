@@ -55,6 +55,9 @@ class PhotoPickerScreen {
           specialItemBuilder: (context, path, length) {
             return _buildCameraButton(context);
           },
+          // dragToSelect: true,  //could be annoying for some users, todo: add a setting for this
+          
+
           sortPathsByModifiedDate: true, // Show recent photos first
         ),
       );

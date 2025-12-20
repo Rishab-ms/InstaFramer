@@ -72,3 +72,27 @@ class UpdateCustomImageSizeEvent extends PreferencesEvent {
   List<Object?> get props => [size];
 }
 
+/// Event to update the last used photo scale.
+/// 
+/// Saves the scale value (0.5-1.0) to remember user's preference for next session.
+class UpdateLastUsedScaleEvent extends PreferencesEvent {
+  final double scale;
+
+  const UpdateLastUsedScaleEvent(this.scale);
+
+  @override
+  List<Object?> get props => [scale];
+}
+
+/// Event to update the last used blur intensity.
+/// 
+/// Saves the blur intensity (1-100) to remember user's preference for next session.
+class UpdateLastUsedBlurIntensityEvent extends PreferencesEvent {
+  final int intensity;
+
+  const UpdateLastUsedBlurIntensityEvent(this.intensity);
+
+  @override
+  List<Object?> get props => [intensity];
+}
+

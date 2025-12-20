@@ -44,6 +44,7 @@ class InstaFramerApp extends StatelessWidget {
         BlocProvider<PhotoBloc>(
           create: (context) => PhotoBloc(
             exportService: ExportService(),
+            preferencesService: PreferencesService(),
           ),
         ),
       ],

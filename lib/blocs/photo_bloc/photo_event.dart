@@ -84,6 +84,18 @@ class UpdateBackgroundTypeEvent extends PhotoEvent {
   List<Object?> get props => [backgroundType];
 }
 
+/// Event to update the blur intensity.
+/// 
+/// Intensity ranges from 1-100 (blur radius). Only affects extendedBlur background.
+class UpdateBlurIntensityEvent extends PhotoEvent {
+  final int intensity;
+
+  const UpdateBlurIntensityEvent(this.intensity);
+
+  @override
+  List<Object?> get props => [intensity];
+}
+
 /// Event to update the current photo index in the carousel.
 /// 
 /// Used when user swipes between photos in the editor.

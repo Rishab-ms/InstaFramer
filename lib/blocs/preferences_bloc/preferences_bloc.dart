@@ -21,6 +21,8 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
     on<UpdateImageQualityEvent>(_onUpdateImageQuality);
     on<UpdateImageSizePresetEvent>(_onUpdateImageSizePreset);
     on<UpdateCustomImageSizeEvent>(_onUpdateCustomImageSize);
+    on<UpdateLastUsedScaleEvent>(_onUpdateLastUsedScale);
+    on<UpdateLastUsedBlurIntensityEvent>(_onUpdateLastUsedBlurIntensity);
   }
 
   /// Load user preferences from persistent storage on app start.
@@ -92,6 +94,36 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
       final currentState = state as PreferencesLoadedState;
       final updatedPreferences = currentState.preferences.copyWith(
         customImageSize: event.size,
+      );
+      await _preferencesService.savePreferences(updatedPreferences);
+      emit(PreferencesLoadedState(updatedPreferences));
+    }
+  }
+
+  /// Update last used scale and persist to storage.
+  Future<void> _onUpdateLastUsedScale(
+    UpdateLastUsedScaleEvent event,
+    Emitter<PreferencesState> emit,
+  ) async {
+    if (state is PreferencesLoadedState) {
+      final currentState = state as PreferencesLoadedState;
+      final updatedPreferences = currentState.preferences.copyWith(
+        lastUsedScale: event.scale,
+      );
+      await _preferencesService.savePreferences(updatedPreferences);
+      emit(PreferencesLoadedState(updatedPreferences));
+    }
+  }
+
+  /// Update last used blur intensity and persist to storage.
+  Future<void> _onUpdateLastUsedBlurIntensity(
+    UpdateLastUsedBlurIntensityEvent event,
+    Emitter<PreferencesState> emit,
+  ) async {
+    if (state is PreferencesLoadedState) {
+      final currentState = state as PreferencesLoadedState;
+      final updatedPreferences = currentState.preferences.copyWith(
+        lastUsedBlurIntensity: event.intensity,
       );
       await _preferencesService.savePreferences(updatedPreferences);
       emit(PreferencesLoadedState(updatedPreferences));

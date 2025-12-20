@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../services/export_service.dart';
+import '../../services/preferences_service.dart';
 import 'photo_event.dart';
 import 'photo_state.dart';
 import '../../models/photo_settings.dart';
@@ -8,14 +9,19 @@ import '../../models/photo_settings.dart';
 /// 
 /// Handles:
 /// - Photo gallery selection
-/// - Photo settings (aspect ratio, scale, background)
+/// - Photo settings (aspect ratio, scale, background, blur intensity)
 /// - Live preview state management
 /// - Batch export with progress tracking
+/// - Persistence of user's last used scale and blur settings
 class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
   final ExportService _exportService;
+  final PreferencesService _preferencesService;
 
-  PhotoBloc({required ExportService exportService})
-      : _exportService = exportService,
+  PhotoBloc({
+    required ExportService exportService,
+    required PreferencesService preferencesService,
+  })  : _exportService = exportService,
+        _preferencesService = preferencesService,
         super(const PhotoInitialState()) {
     on<LoadPhotosFromGalleryEvent>(_onLoadPhotosFromGallery);
     on<PhotosSelectedEvent>(_onPhotosSelected);
@@ -23,6 +29,7 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     on<UpdateAspectRatioEvent>(_onUpdateAspectRatio);
     on<UpdateScaleEvent>(_onUpdateScale);
     on<UpdateBackgroundTypeEvent>(_onUpdateBackgroundType);
+    on<UpdateBlurIntensityEvent>(_onUpdateBlurIntensity);
     on<UpdateCurrentIndexEvent>(_onUpdateCurrentIndex);
     on<ExportAllPhotosEvent>(_onExportAllPhotos);
     on<ClearPhotosEvent>(_onClearPhotos);
@@ -39,6 +46,7 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
 
   /// Handle photo selection from gallery.
   /// Validates photo count (1-30) and transitions to loaded state.
+  /// Loads last used scale and blur intensity from preferences.
   Future<void> _onPhotosSelected(
     PhotosSelectedEvent event,
     Emitter<PhotoState> emit,
@@ -53,9 +61,15 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
       return;
     }
 
+    // Load saved preferences to restore last used scale and blur intensity
+    final prefs = await _preferencesService.loadPreferences();
+
     emit(PhotosLoadedState(
       photos: event.photos,
-      settings: const PhotoSettings(), // Default settings
+      settings: PhotoSettings(
+        scale: prefs.lastUsedScale,
+        blurIntensity: prefs.lastUsedBlurIntensity,
+      ),
     ));
   }
 
@@ -84,7 +98,7 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     }
   }
 
-  /// Update only the scale setting.
+  /// Update only the scale setting and persist to preferences.
   Future<void> _onUpdateScale(
     UpdateScaleEvent event,
     Emitter<PhotoState> emit,
@@ -95,6 +109,12 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
         scale: event.scale,
       );
       emit(currentState.copyWith(settings: updatedSettings));
+      
+      // Save to preferences for next session
+      final prefs = await _preferencesService.loadPreferences();
+      await _preferencesService.savePreferences(
+        prefs.copyWith(lastUsedScale: event.scale),
+      );
     }
   }
 
@@ -109,6 +129,26 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
         backgroundType: event.backgroundType,
       );
       emit(currentState.copyWith(settings: updatedSettings));
+    }
+  }
+
+  /// Update only the blur intensity setting and persist to preferences.
+  Future<void> _onUpdateBlurIntensity(
+    UpdateBlurIntensityEvent event,
+    Emitter<PhotoState> emit,
+  ) async {
+    if (state is PhotosLoadedState) {
+      final currentState = state as PhotosLoadedState;
+      final updatedSettings = currentState.settings.copyWith(
+        blurIntensity: event.intensity,
+      );
+      emit(currentState.copyWith(settings: updatedSettings));
+      
+      // Save to preferences for next session
+      final prefs = await _preferencesService.loadPreferences();
+      await _preferencesService.savePreferences(
+        prefs.copyWith(lastUsedBlurIntensity: event.intensity),
+      );
     }
   }
 
@@ -146,12 +186,11 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
         ));
       }
 
-      // Export complete
+      // Export complete - emit success state
       emit(PhotosExportedState(currentState.photos.length));
       
-      // Return to loaded state after brief display
-      await Future.delayed(const Duration(seconds: 2));
-      emit(currentState);
+      // Note: We don't automatically return to loaded state here.
+      // The UI will handle navigation and clear photos when appropriate.
     } catch (e) {
       emit(PhotoErrorState('Export failed: $e'));
       // Return to loaded state so user can retry

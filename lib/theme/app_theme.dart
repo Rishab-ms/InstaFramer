@@ -18,6 +18,7 @@ class AppTheme {
   // static const Color _warmTaupe = Color(0xFF92400E); // Earthy brown - reserved for future use
 
   /// Light theme configuration with warm amber sunset tones
+  /// Uses Google Sans font family for a modern, clean aesthetic
   static ThemeData light() {
     return FlexThemeData.light(
       colors: const FlexSchemeColor(
@@ -65,11 +66,13 @@ class AppTheme {
       visualDensity: FlexColorScheme.comfortablePlatformDensity,
       useMaterial3: true,
       swapLegacyOnMaterial3: true,
+      fontFamily: 'GoogleSans',
     );
   }
 
   /// Dark theme configuration with warm amber tones for night use
   /// Maintains the warm aesthetic while being easy on the eyes in low light
+  /// Uses Google Sans font family for a modern, clean aesthetic
   static ThemeData dark() {
     return FlexThemeData.dark(
       colors: const FlexSchemeColor(
@@ -124,6 +127,7 @@ class AppTheme {
       secondaryLightRef: _goldenHour, // Reference to light mode secondary
       tertiary: const Color(0xFFFFCC99),
       tertiaryLightRef: _peachy, // Reference to light mode tertiary
+      fontFamily: 'GoogleSans',
     );
   }
 
