@@ -23,6 +23,7 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
     on<UpdateCustomImageSizeEvent>(_onUpdateCustomImageSize);
     on<UpdateLastUsedScaleEvent>(_onUpdateLastUsedScale);
     on<UpdateLastUsedBlurIntensityEvent>(_onUpdateLastUsedBlurIntensity);
+    on<UpdatePreserveMetadataEvent>(_onUpdatePreserveMetadata);
   }
 
   /// Load user preferences from persistent storage on app start.
@@ -124,6 +125,21 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
       final currentState = state as PreferencesLoadedState;
       final updatedPreferences = currentState.preferences.copyWith(
         lastUsedBlurIntensity: event.intensity,
+      );
+      await _preferencesService.savePreferences(updatedPreferences);
+      emit(PreferencesLoadedState(updatedPreferences));
+    }
+  }
+
+  /// Update metadata preservation setting and persist to storage.
+  Future<void> _onUpdatePreserveMetadata(
+    UpdatePreserveMetadataEvent event,
+    Emitter<PreferencesState> emit,
+  ) async {
+    if (state is PreferencesLoadedState) {
+      final currentState = state as PreferencesLoadedState;
+      final updatedPreferences = currentState.preferences.copyWith(
+        preserveMetadata: event.preserveMetadata,
       );
       await _preferencesService.savePreferences(updatedPreferences);
       emit(PreferencesLoadedState(updatedPreferences));

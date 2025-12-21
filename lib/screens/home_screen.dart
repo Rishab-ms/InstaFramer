@@ -23,8 +23,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('InstaFramer'),
-        centerTitle: true,
+       backgroundColor: Colors.transparent,
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -50,7 +49,6 @@ class HomeScreen extends StatelessWidget {
         listener: (context, state) {
           // Navigate to editor when photos are successfully loaded (first time only)
           if (state is PhotosLoadedState) {
-            debugPrint("navigating to editor screen (initial photo selection)");
             Navigator.push(
               context,
               MaterialPageRoute(

@@ -1,9 +1,7 @@
 import 'dart:typed_data';
-import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gal/gal.dart';
-import 'package:photo_manager/photo_manager.dart';
 
 import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_event.dart';
@@ -13,6 +11,7 @@ import '../models/background_type.dart';
 import '../services/image_processor.dart';
 import '../widgets/editor/editor_app_bar.dart';
 import '../widgets/editor/export_button.dart';
+import '../widgets/editor/photo_carousel.dart';
 
 /// Editor screen - displays carousel of photos with editing controls.
 ///
@@ -53,9 +52,21 @@ class _EditorScreenState extends State<EditorScreen> {
       },
       // Rebuild when state changes to update carousel
       buildWhen: (previous, current) {
-        // Clear preview cache when aspect ratio changes
+        // Smart cache invalidation: clear cache when settings that affect preview change
         if (previous is PhotosLoadedState && current is PhotosLoadedState) {
-          if (previous.settings.aspectRatio != current.settings.aspectRatio) {
+          final prevSettings = previous.settings;
+          final currSettings = current.settings;
+
+          // Clear cache if any setting that affects the visual result changes
+          final shouldClearCache =
+              prevSettings.aspectRatio.id != currSettings.aspectRatio.id ||
+              prevSettings.backgroundType != currSettings.backgroundType ||
+              prevSettings.blurIntensity != currSettings.blurIntensity ||
+              prevSettings.imageQuality != currSettings.imageQuality ||
+              prevSettings.imageSize != currSettings.imageSize ||
+              (prevSettings.scale - currSettings.scale).abs() > 0.01; // Small threshold for scale
+
+          if (shouldClearCache) {
             _previewCache.clear();
           }
         }
@@ -136,218 +147,149 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  /// Show confirmation dialog when user tries to leave editor.
+  ///
+  /// Prevents accidental loss of unsaved work by asking for explicit confirmation.
+  /// If user confirms, clears BLoC state and allows navigation.
+  Future<bool> _showLeaveConfirmationDialog(BuildContext context) async {
+    final theme = Theme.of(context);
+    final photoBloc = context.read<PhotoBloc>(); // Store reference before async gap
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Leave Editor?',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'You have unsaved changes. Are you sure you want to leave? Your photo selection and settings will be lost.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(
+                'Stay',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+              ),
+              child: const Text(
+                'Leave',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user confirmed leaving, clear the BLoC state
+    if (result == true) {
+      photoBloc.add(const ClearPhotosEvent());
+    }
+
+    return result ?? false; // Default to false if dialog was dismissed
+  }
+
   /// Build the main editor view with carousel and controls.
   Widget _buildEditorView(BuildContext context, PhotosLoadedState state) {
     final theme = Theme.of(context);
     final settings = state.settings;
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: const EditorAppBar(),
-      body: Column(
-        children: [
-          // Photo counter above carousel
-          BlocSelector<
-            PhotoBloc,
-            PhotoState,
-            ({int currentIndex, int totalPhotos})
-          >(
-            selector: (state) {
-              if (state is PhotosLoadedState) {
-                return (
-                  currentIndex: state.currentIndex,
-                  totalPhotos: state.photos.length,
+    return PopScope(
+      canPop: false, // Prevent default back behavior
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          // Show confirmation dialog if pop was prevented
+          final shouldPop = await _showLeaveConfirmationDialog(context);
+          if (shouldPop && context.mounted) {
+            Navigator.of(context).pop();
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: theme.colorScheme.surface,
+        appBar: const EditorAppBar(),
+        body: Column(
+          children: [
+            // Photo counter above carousel
+            BlocSelector<
+              PhotoBloc,
+              PhotoState,
+              ({int currentIndex, int totalPhotos})
+            >(
+              selector: (state) {
+                if (state is PhotosLoadedState) {
+                  return (
+                    currentIndex: state.currentIndex,
+                    totalPhotos: state.photos.length,
+                  );
+                }
+                return (currentIndex: 0, totalPhotos: 0);
+              },
+              builder: (context, data) {
+                return Text(
+                  '${data.currentIndex + 1} of ${data.totalPhotos}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 );
-              }
-              return (currentIndex: 0, totalPhotos: 0);
-            },
-            builder: (context, data) {
-              return Text(
-                '${data.currentIndex + 1} of ${data.totalPhotos}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
+              },
+            ),
+            const SizedBox(height: 8),
+            // Photo carousel (sized to match aspect ratio)
+            Expanded(
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: settings.aspectRatio.ratio,
+                  child: PhotoCarousel(
+                    state: state,
+                    imageProcessor: _imageProcessor,
+                    previewCache: _previewCache,
+                  ),
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          // Photo carousel (sized to match aspect ratio)
-          Expanded(
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: settings.aspectRatio.ratio,
-                child: _buildPhotoCarousel(context, state),
               ),
             ),
-          ),
 
-          // Quick controls with aspect ratio and backgrounds
-          _buildQuickControls(context, settings),
+            // Quick controls with aspect ratio and backgrounds
+            _buildQuickControls(context, settings),
 
-          // Scale slider (always visible)
-          _buildScaleSlider(context, settings),
+            // Scale slider (always visible)
+            _buildScaleSlider(context, settings),
 
-          // Blur intensity slider (only shown when blur background is selected)
-          if (settings.backgroundType == BackgroundType.extendedBlur)
-            _buildBlurIntensitySlider(context, settings),
+            // Blur intensity slider (only shown when blur background is selected)
+            if (settings.backgroundType == BackgroundType.extendedBlur)
+              _buildBlurIntensitySlider(context, settings),
 
-          // Export button at the bottom
-          const ExportButton(),
-        ],
-      ),
-    );
-  }
-
-  /// Build the photo carousel using card_swiper.
-  Widget _buildPhotoCarousel(BuildContext context, PhotosLoadedState state) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Swiper(
-        itemCount: state.photos.length,
-        index: state.currentIndex,
-        fade: 0.5,
-        allowImplicitScrolling: true,
-
-        onIndexChanged: (index) {
-          // Update current index in BLoC
-          context.read<PhotoBloc>().add(UpdateCurrentIndexEvent(index));
-        },
-        // Swiper configuration for smooth UX
-        loop: false,
-        scale: 0.95, // Slight scale for depth
-        viewportFraction: 0.9, // Show small peek of adjacent cards
-        // Use custom pagination for better aesthetics
-        pagination: SwiperPagination(
-          builder: DotSwiperPaginationBuilder(
-            activeColor: Theme.of(context).colorScheme.primary,
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            size: 8,
-            activeSize: 12,
-          ),
+            // Export button at the bottom
+            const ExportButton(),
+          ],
         ),
-        itemBuilder: (context, index) {
-          return _buildPhotoCard(context, state.photos[index], state.settings);
-        },
       ),
     );
   }
 
-  /// Build individual photo card with preview.
-  ///
-  /// Processes the photo with current settings to show accurate preview.
-  /// This matches what the exported photo will look like.
-  Widget _buildPhotoCard(
-    BuildContext context,
-    AssetEntity photo,
-    dynamic settings,
-  ) {
-    final theme = Theme.of(context);
 
-    return Card(
-      elevation: 0,color: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      clipBehavior: Clip.antiAlias,
-      child: FutureBuilder<Uint8List?>(
-        // Process the photo with actual settings for accurate preview
-        future: _generatePreview(photo, settings),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            // Show loading state with skeleton
-            return Container(
-              color: theme.colorScheme.surfaceContainerHighest,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        color: theme.colorScheme.primary.withOpacity(0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Processing preview...',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
 
-          if (snapshot.hasError || !snapshot.hasData) {
-            return Container(
-              color: theme.colorScheme.errorContainer,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.broken_image,
-                      size: 64,
-                      color: theme.colorScheme.error,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Failed to load preview',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.error,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
 
-          // Display the processed preview
-          // Wrap in AspectRatio to maintain proper dimensions in carousel
-          return AspectRatio(
-            aspectRatio: settings.aspectRatio.ratio,
-            child: Image.memory(snapshot.data!, fit: BoxFit.contain),
-          );
-        },
-      ),
-    );
-  }
 
-  /// Generate a preview of the photo with current settings.
-  ///
-  /// Uses caching and lower resolution for optimal performance.
-  /// Cache key includes all settings that affect the preview appearance.
-  Future<Uint8List> _generatePreview(
-    AssetEntity photo,
-    dynamic settings,
-  ) async {
-    // Generate cache key based on photo ID and all relevant settings
-    final cacheKey =
-        '${photo.id}_${settings.aspectRatio}_${settings.scale.toStringAsFixed(2)}_${settings.backgroundType}_${settings.blurIntensity}';
 
-    // Return cached preview if available
-    if (_previewCache.containsKey(cacheKey)) {
-      return _previewCache[cacheKey]!;
-    }
 
-    // Process preview using optimized method (uses thumbnail, not full res)
-    final previewBytes = await _imageProcessor.processPreview(photo, settings);
-
-    // Cache the result for instant retrieval on swipe-back
-    _previewCache[cacheKey] = previewBytes;
-
-    // Limit cache size to prevent memory issues (keep last 10 previews)
-    if (_previewCache.length > 10) {
-      // Remove oldest entry (first key)
-      _previewCache.remove(_previewCache.keys.first);
-    }
-
-    return previewBytes;
-  }
 
   /// Build quick controls bar (aspect ratio and background).
   ///
@@ -521,9 +463,13 @@ class _EditorScreenState extends State<EditorScreen> {
               value: settings.scale,
               min: 0.5,
               max: 1.0,
-              divisions: 50,
+              divisions: 12, // 13 intervals of approximately 4% each
               label: '${(settings.scale * 100).toInt()}%',
               onChanged: (value) {
+                // Visual feedback only - no expensive calculations during drag
+              },
+              onChangeEnd: (value) {
+                // Only trigger calculations when finger is removed
                 context.read<PhotoBloc>().add(UpdateScaleEvent(value));
               },
             ),
@@ -569,9 +515,13 @@ class _EditorScreenState extends State<EditorScreen> {
               value: settings.blurIntensity.toDouble(),
               min: 1,
               max: 100,
-              divisions: 99,
+              divisions: 4, // 5 divisions total
               label: '${settings.blurIntensity}',
               onChanged: (value) {
+                // Visual feedback only - no expensive calculations during drag
+              },
+              onChangeEnd: (value) {
+                // Only trigger calculations when finger is removed
                 context.read<PhotoBloc>().add(
                   UpdateBlurIntensityEvent(value.toInt()),
                 );
@@ -604,67 +554,99 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget _buildProcessingView(PhotosProcessingState state) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Circular progress indicator
-            SizedBox(
-              width: 120,
-              height: 120,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Background circle
-                  SizedBox(
-                    width: 120,
-                    height: 120,
-                    child: CircularProgressIndicator(
-                      value: state.progress,
-                      strokeWidth: 8,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      color: theme.colorScheme.primary,
+    return PopScope(
+      canPop: false, // Prevent back navigation during export
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          // Show confirmation dialog if pop was prevented
+          final shouldPop = await _showLeaveConfirmationDialog(context);
+          if (shouldPop && context.mounted) {
+            Navigator.of(context).pop();
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: theme.colorScheme.surface,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Circular progress indicator
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Background circle
+                    SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: CircularProgressIndicator(
+                        value: state.progress,
+                        strokeWidth: 8,
+                        backgroundColor:
+                            theme.colorScheme.surfaceContainerHighest,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
-                  ),
-                  // Percentage text
-                  Text(
-                    '${(state.progress * 100).toInt()}%',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
+                    // Percentage text
+                    Text(
+                      '${(state.progress * 100).toInt()}%',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'Exporting Photos...',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${state.current} of ${state.total} completed',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Linear progress bar for additional feedback
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 48),
+                child: LinearProgressIndicator(
+                  value: state.progress,
+                  minHeight: 8,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              if (state.backgroundType == BackgroundType.extendedBlur) ...[
+                const SizedBox(height: 32),
+                Text(
+                  'Blur processing takes longer - please wait',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Exporting Photos...',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${state.current} of ${state.total} completed',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 32),
-            // Linear progress bar for additional feedback
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48),
-              child: LinearProgressIndicator(
-                value: state.progress,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ],
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Do not leave this page during export',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:photo_manager/photo_manager.dart';
 import '../../services/export_service.dart';
 import '../../services/preferences_service.dart';
 import 'photo_event.dart';
@@ -46,6 +47,7 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
 
   /// Handle photo selection from gallery.
   /// Validates photo count (1-30) and transitions to loaded state.
+  /// If photos already exist, merges new selection with existing photos.
   /// Loads last used scale and blur intensity from preferences.
   Future<void> _onPhotosSelected(
     PhotosSelectedEvent event,
@@ -56,7 +58,25 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
       return;
     }
 
-    if (event.photos.length > 30) {
+    // Check if we already have photos loaded and merge them
+    List<AssetEntity> finalPhotos;
+    int currentIndex = 0;
+
+    if (state is PhotosLoadedState) {
+      final currentState = state as PhotosLoadedState;
+      // Merge existing photos with newly selected photos
+      final existingPhotos = List<AssetEntity>.from(currentState.photos);
+      final newPhotos = event.photos.where((newPhoto) =>
+          !existingPhotos.any((existing) => existing.id == newPhoto.id)).toList();
+
+      finalPhotos = existingPhotos + newPhotos;
+      currentIndex = currentState.currentIndex; // Keep current index
+    } else {
+      // No existing photos, use the selected ones
+      finalPhotos = event.photos;
+    }
+
+    if (finalPhotos.length > 30) {
       emit(const PhotoErrorState('Maximum 30 photos allowed'));
       return;
     }
@@ -65,7 +85,8 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     final prefs = await _preferencesService.loadPreferences();
 
     emit(PhotosLoadedState(
-      photos: event.photos,
+      photos: finalPhotos,
+      currentIndex: currentIndex,
       settings: PhotoSettings(
         scale: prefs.lastUsedScale,
         blurIntensity: prefs.lastUsedBlurIntensity,
@@ -175,14 +196,19 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
 
     final currentState = state as PhotosLoadedState;
     try {
+      // Load preferences to get metadata preservation setting
+      final preferences = await _preferencesService.loadPreferences();
+
       // Process photos and emit progress updates
       await for (final progress in _exportService.exportPhotos(
         photos: currentState.photos,
         settings: currentState.settings,
+        preserveMetadata: preferences.preserveMetadata,
       )) {
         emit(PhotosProcessingState(
           current: progress,
           total: currentState.photos.length,
+          backgroundType: currentState.settings.backgroundType,
         ));
       }
 

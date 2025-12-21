@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:photo_manager/photo_manager.dart';
+import '../../models/background_type.dart';
 import '../../models/photo_settings.dart';
 
 /// Base class for all photo-related states.
@@ -71,14 +72,16 @@ class PhotosProcessingState extends PhotoState {
   final int current;
   final int total;
   final double progress;
+  final BackgroundType backgroundType;
 
   const PhotosProcessingState({
     required this.current,
     required this.total,
+    required this.backgroundType,
   }) : progress = current / total;
 
   @override
-  List<Object?> get props => [current, total, progress];
+  List<Object?> get props => [current, total, progress, backgroundType];
 }
 
 /// Success state after all photos are exported.

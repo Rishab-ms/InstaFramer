@@ -5,12 +5,13 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_event.dart';
+import '../blocs/photo_bloc/photo_state.dart';
 
 /// Photo picker service for InstaFramer.
-/// 
+///
 /// Provides a static interface to launch the gallery picker using
 /// [wechat_assets_picker] with proper permission handling.
-/// 
+///
 /// Features:
 /// - Multi-select up to 30 photos
 /// - Android permission request and handling
@@ -18,21 +19,22 @@ import '../blocs/photo_bloc/photo_event.dart';
 /// - Error handling with user-friendly dialogs
 class PhotoPickerScreen {
   /// Launch the photo picker and handle photo selection.
-  /// 
+  ///
   /// Workflow:
   /// 1. Request Android photo permissions
   /// 2. Show permission dialog if denied
   /// 3. Launch wechat_assets_picker with custom theme
   /// 4. Dispatch [PhotosSelected] event to [PhotoBloc] with results
-  /// 
+  ///
   /// [context] - BuildContext to access BLoC and show dialogs
   static Future<void> pickPhotos(BuildContext context) async {
     try {
       // Request photo access permission from Android
       // Handles both Android 13+ granular permissions and legacy storage permissions
-      final PermissionState permissionState = await PhotoManager.requestPermissionExtend();
-      
-      if (permissionState != PermissionState.authorized && 
+      final PermissionState permissionState =
+          await PhotoManager.requestPermissionExtend();
+
+      if (permissionState != PermissionState.authorized &&
           permissionState != PermissionState.limited) {
         // Permission denied - show dialog to guide user to settings
         if (context.mounted) {
@@ -41,21 +43,30 @@ class PhotoPickerScreen {
         return;
       }
 
+      // Get currently selected photos if any
+      final currentState = context.read<PhotoBloc>().state;
+      final List<AssetEntity> selectedAssets = currentState is PhotosLoadedState
+          ? List.from(currentState.photos)
+          : const [];
+
       // Launch the picker with custom configuration
       final List<AssetEntity>? result = await AssetPicker.pickAssets(
         context,
         pickerConfig: AssetPickerConfig(
           maxAssets: 30, // Instagram batch limit
           requestType: RequestType.image, // Images only, no videos
-          selectedAssets: const [],
+          selectedAssets: selectedAssets,
+
           textDelegate: const EnglishAssetPickerTextDelegate(),
           // Only use pickerTheme (not themeColor) to avoid assertion error
-          pickerTheme: _buildPickerTheme(context),
+          // pickerTheme: _buildPickerTheme(context),
           specialItemPosition: SpecialItemPosition.prepend,
           specialItemBuilder: (context, path, length) {
             return _buildCameraButton(context);
           },
-          // dragToSelect: true,  //could be annoying for some users, todo: add a setting for this
+          themeColor: Theme.of(context).colorScheme.primary,
+          dragToSelect:
+              false, //could be annoying for some users, todo: add a setting for this
           
 
           sortPathsByModifiedDate: true, // Show recent photos first
@@ -66,10 +77,9 @@ class PhotoPickerScreen {
       if (result != null && result.isNotEmpty && context.mounted) {
         // Dispatch selected photos to PhotoBloc
         context.read<PhotoBloc>().add(PhotosSelectedEvent(result));
-      } else if (context.mounted) {
-        // User cancelled - clear any previous state
-        context.read<PhotoBloc>().add(const ClearPhotosEvent());
       }
+      // Note: We no longer clear photos when user cancels,
+      // since they might be adding to an existing selection
     } on PlatformException catch (e) {
       if (context.mounted) {
         _showErrorDialog(context, 'Failed to access photos: ${e.message}');
@@ -81,29 +91,9 @@ class PhotoPickerScreen {
     }
   }
 
-  /// Build a custom theme for the picker to match app theme.
-  /// 
-  /// Creates a ThemeData that matches the current app theme (light/dark)
-  /// to provide a seamless user experience.
-  static ThemeData _buildPickerTheme(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseTheme = isDark ? ThemeData.dark() : ThemeData.light();
-    
-    return baseTheme.copyWith(
-      primaryColor: Theme.of(context).colorScheme.primary,
-      colorScheme: Theme.of(context).colorScheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
-        elevation: 0,
-        systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-      ),
-      scaffoldBackgroundColor: Theme.of(context).colorScheme.background,
-    );
-  }
 
   /// Build camera button widget for special item position.
-  /// 
+  ///
   /// Note: This is a placeholder - actual camera functionality not implemented in V1.
   static Widget _buildCameraButton(BuildContext context) {
     return Container(
@@ -131,7 +121,7 @@ class PhotoPickerScreen {
   }
 
   /// Show permission denied dialog with option to open system settings.
-  /// 
+  ///
   /// Guides the user to grant photo access permissions through Android settings.
   static void _showPermissionDeniedDialog(BuildContext context) {
     showDialog(
@@ -160,7 +150,7 @@ class PhotoPickerScreen {
   }
 
   /// Show error dialog for unexpected errors.
-  /// 
+  ///
   /// Displays platform-specific errors or general exceptions to the user.
   static void _showErrorDialog(BuildContext context, String message) {
     showDialog(
@@ -178,4 +168,3 @@ class PhotoPickerScreen {
     );
   }
 }
-

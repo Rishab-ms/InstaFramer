@@ -85,7 +85,7 @@ class UpdateLastUsedScaleEvent extends PreferencesEvent {
 }
 
 /// Event to update the last used blur intensity.
-/// 
+///
 /// Saves the blur intensity (1-100) to remember user's preference for next session.
 class UpdateLastUsedBlurIntensityEvent extends PreferencesEvent {
   final int intensity;
@@ -94,5 +94,18 @@ class UpdateLastUsedBlurIntensityEvent extends PreferencesEvent {
 
   @override
   List<Object?> get props => [intensity];
+}
+
+/// Event to update the metadata preservation setting.
+///
+/// When true (default), preserves EXIF data like date taken, location, camera info.
+/// When false, exports clean images without original metadata.
+class UpdatePreserveMetadataEvent extends PreferencesEvent {
+  final bool preserveMetadata;
+
+  const UpdatePreserveMetadataEvent(this.preserveMetadata);
+
+  @override
+  List<Object?> get props => [preserveMetadata];
 }
 

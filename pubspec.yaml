@@ -18,6 +18,7 @@ dependencies:
   photo_manager: ^3.0.0
   wechat_assets_picker: ^9.0.0
   image: ^4.1.0
+  exif: ^3.3.0
   
   # UI Components
   card_swiper: ^3.0.1
@@ -41,7 +42,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
+
+  # Assets
+  assets:
+    - android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
   # Fonts
   fonts:
     - family: GoogleSans

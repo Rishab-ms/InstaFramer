@@ -10,6 +10,7 @@ import '../widgets/preferences/custom_size_input_card.dart';
 import '../widgets/preferences/error_state_view.dart';
 import '../widgets/preferences/feedback_tile.dart';
 import '../widgets/preferences/image_size_preset_selector.dart';
+import '../widgets/preferences/preserve_metadata_switch.dart';
 import '../widgets/preferences/quality_slider_card.dart';
 import '../widgets/preferences/settings_section_header.dart';
 import '../widgets/preferences/theme_mode_selector.dart';
@@ -107,6 +108,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         // Export Quality Section
         const SettingsSectionHeader(title: 'Export Quality'),
         QualitySliderCard(currentQuality: preferences.imageQuality),
+        PreserveMetadataSwitch(preserveMetadata: preferences.preserveMetadata),
         const Divider(height: AppTheme.spacingLarge * 2),
         
         // Export Size Section

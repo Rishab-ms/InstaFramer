@@ -24,7 +24,7 @@ class AppInfoFooter extends StatelessWidget {
     super.key,
     this.appName = 'InstaFrame',
     this.version = '1.0.0',
-    this.tagline = 'Made with ❤️ for Instagram creators',
+    this.tagline = 'Made with ❤️ in India for Instagram creators',
   });
 
   @override
