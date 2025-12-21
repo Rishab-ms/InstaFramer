@@ -10,20 +10,13 @@ import '../../screens/photo_picker_screen.dart';
 import '../../services/image_processor.dart';
 import 'add_photos_card.dart';
 import 'photo_card.dart';
-import 'simple_photo_placeholder.dart';
 
-/// Photo carousel widget for displaying and navigating through selected photos.
-///
-/// Displays photos in a swipeable carousel with viewport optimization for performance.
-/// Only processes photos currently in viewport to avoid unnecessary processing.
 class PhotoCarousel extends StatefulWidget {
-  /// The current state containing photos and settings
   final PhotosLoadedState state;
-
-  /// Image processor for generating previews
   final ImageProcessor imageProcessor;
 
-  /// Cache for processed preview images
+  // Cache is no longer needed for Widget-based previews,
+  // but keeping signature to avoid breaking parent call sites immediately
   final Map<String, Uint8List> previewCache;
 
   const PhotoCarousel({
@@ -46,70 +39,38 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
         itemCount: widget.state.photos.length + 1, // +1 for add photos card
         index: widget.state.currentIndex,
         fade: 0.5,
-        allowImplicitScrolling: true,
+        allowImplicitScrolling: true, // This is now safe to use!
         onIndexChanged: (index) {
           // Only update current index in BLoC if it's not the add photos card
           if (index < widget.state.photos.length) {
             context.read<PhotoBloc>().add(UpdateCurrentIndexEvent(index));
           }
         },
-        // Swiper configuration for smooth UX
         loop: false,
-        scale: 0.95, // Slight scale for depth
-        viewportFraction: 0.9, // Show small peek of adjacent cards
+        scale: 0.95,
+        viewportFraction: 0.9,
         itemBuilder: (context, index) {
-          // Check if this is the add photos card (last item)
           if (index == widget.state.photos.length) {
             return AddPhotosCard(
               onAddPhotos: () => _navigateToPhotoPicker(context),
             );
           }
 
-          // Check if this photo is in viewport (current + adjacent)
-          final isInViewport = _isPhotoInViewport(
-            index,
-            widget.state.currentIndex,
+          // We don't need complex viewport logic anymore because
+          // PhotoCard is now just lightweight widgets.
+          return PhotoCard(
+            photoIndex: index,
+            photo: widget.state.photos[index],
+            settings: widget.state.settings,
+            currentIndex: widget.state.currentIndex,
+            imageProcessor: widget.imageProcessor,
           );
-
-          if (isInViewport) {
-            // Use PhotoCard for viewport photos (with full processing)
-            return PhotoCard(
-              photoIndex: index,
-              photo: widget.state.photos[index],
-              settings: widget.state.settings,
-              currentIndex: widget.state.currentIndex,
-              imageProcessor: widget.imageProcessor,
-              previewCache: widget.previewCache,
-            );
-          } else {
-            // Use simple placeholder for non-viewport photos (lightweight)
-            return SimplePhotoPlaceholder(
-              photoIndex: index,
-              currentIndex: widget.state.currentIndex,
-              aspectRatio: widget.state.settings.aspectRatio.ratio,
-            );
-          }
         },
       ),
     );
   }
 
-  /// Navigate to photo picker to add more photos.
-  ///
-  /// Launches the photo picker dialog and handles the selection.
-  /// If photos are selected, they will be added to the existing selection.
   void _navigateToPhotoPicker(BuildContext context) {
     PhotoPickerScreen.pickPhotos(context);
-  }
-
-  /// Check if a photo index is currently in the viewport.
-  ///
-  /// Only processes current photo and adjacent photos for performance.
-  /// Especially important for blur backgrounds which are computationally expensive.
-  bool _isPhotoInViewport(int photoIndex, int currentIndex) {
-    final distance = (photoIndex - currentIndex).abs();
-    // Include current photo and adjacent photos (distance <= 1)
-    // This gives smooth scrolling experience while limiting processing
-    return distance <= 1;
   }
 }

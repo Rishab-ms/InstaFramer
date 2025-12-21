@@ -64,7 +64,8 @@ class _EditorScreenState extends State<EditorScreen> {
               prevSettings.blurIntensity != currSettings.blurIntensity ||
               prevSettings.imageQuality != currSettings.imageQuality ||
               prevSettings.imageSize != currSettings.imageSize ||
-              (prevSettings.scale - currSettings.scale).abs() > 0.01; // Small threshold for scale
+              (prevSettings.scale - currSettings.scale).abs() >
+                  0.01; // Small threshold for scale
 
           if (shouldClearCache) {
             _previewCache.clear();
@@ -77,7 +78,13 @@ class _EditorScreenState extends State<EditorScreen> {
         if (state is PhotosExportedState) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('✅ Exported ${state.count} photos successfully!'),
+              content: Text(
+                '✅ Exported ${state.count} photos successfully!',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 3),
               behavior: SnackBarBehavior.floating,
@@ -153,7 +160,8 @@ class _EditorScreenState extends State<EditorScreen> {
   /// If user confirms, clears BLoC state and allows navigation.
   Future<bool> _showLeaveConfirmationDialog(BuildContext context) async {
     final theme = Theme.of(context);
-    final photoBloc = context.read<PhotoBloc>(); // Store reference before async gap
+    final photoBloc = context
+        .read<PhotoBloc>(); // Store reference before async gap
 
     final result = await showDialog<bool>(
       context: context,
@@ -187,9 +195,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
               child: const Text(
                 'Leave',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -283,13 +289,6 @@ class _EditorScreenState extends State<EditorScreen> {
       ),
     );
   }
-
-
-
-
-
-
-
 
   /// Build quick controls bar (aspect ratio and background).
   ///
@@ -463,13 +462,10 @@ class _EditorScreenState extends State<EditorScreen> {
               value: settings.scale,
               min: 0.5,
               max: 1.0,
-              divisions: 12, // 13 intervals of approximately 4% each
+              year2023: false,
+              divisions: 50,
               label: '${(settings.scale * 100).toInt()}%',
               onChanged: (value) {
-                // Visual feedback only - no expensive calculations during drag
-              },
-              onChangeEnd: (value) {
-                // Only trigger calculations when finger is removed
                 context.read<PhotoBloc>().add(UpdateScaleEvent(value));
               },
             ),
@@ -515,13 +511,10 @@ class _EditorScreenState extends State<EditorScreen> {
               value: settings.blurIntensity.toDouble(),
               min: 1,
               max: 100,
+              year2023: false,
               divisions: 4, // 5 divisions total
               label: '${settings.blurIntensity}',
               onChanged: (value) {
-                // Visual feedback only - no expensive calculations during drag
-              },
-              onChangeEnd: (value) {
-                // Only trigger calculations when finger is removed
                 context.read<PhotoBloc>().add(
                   UpdateBlurIntensityEvent(value.toInt()),
                 );

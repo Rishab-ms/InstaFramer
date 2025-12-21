@@ -25,7 +25,7 @@ Device Information:
 - Brand: ${androidInfo.brand}
 ---
 
-Please describe your feedback or issue above this line.
+Please describe your feedback or issue below this line.
 ''';
     }
     
