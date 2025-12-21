@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,15 +14,10 @@ class PhotoCarousel extends StatefulWidget {
   final PhotosLoadedState state;
   final ImageProcessor imageProcessor;
 
-  // Cache is no longer needed for Widget-based previews,
-  // but keeping signature to avoid breaking parent call sites immediately
-  final Map<String, Uint8List> previewCache;
-
   const PhotoCarousel({
     super.key,
     required this.state,
     required this.imageProcessor,
-    required this.previewCache,
   });
 
   @override

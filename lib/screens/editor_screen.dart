@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gal/gal.dart';
@@ -34,10 +33,6 @@ class _EditorScreenState extends State<EditorScreen> {
   // Image processor for generating previews
   final ImageProcessor _imageProcessor = ImageProcessor();
 
-  // Cache for processed preview images to avoid reprocessing
-  // Key: "${photoId}_${aspectRatio}_${scale}_${bgType}_${blurIntensity}"
-  final Map<String, Uint8List> _previewCache = {};
-
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<PhotoBloc, PhotoState>(
@@ -50,29 +45,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 current is PhotosExportedState) ||
             (previous is! PhotoErrorState && current is PhotoErrorState);
       },
-      // Rebuild when state changes to update carousel
-      buildWhen: (previous, current) {
-        // Smart cache invalidation: clear cache when settings that affect preview change
-        if (previous is PhotosLoadedState && current is PhotosLoadedState) {
-          final prevSettings = previous.settings;
-          final currSettings = current.settings;
 
-          // Clear cache if any setting that affects the visual result changes
-          final shouldClearCache =
-              prevSettings.aspectRatio.id != currSettings.aspectRatio.id ||
-              prevSettings.backgroundType != currSettings.backgroundType ||
-              prevSettings.blurIntensity != currSettings.blurIntensity ||
-              prevSettings.imageQuality != currSettings.imageQuality ||
-              prevSettings.imageSize != currSettings.imageSize ||
-              (prevSettings.scale - currSettings.scale).abs() >
-                  0.01; // Small threshold for scale
-
-          if (shouldClearCache) {
-            _previewCache.clear();
-          }
-        }
-        return true;
-      },
       listener: (context, state) {
         // Show success message when export completes
         if (state is PhotosExportedState) {
@@ -266,7 +239,6 @@ class _EditorScreenState extends State<EditorScreen> {
                   child: PhotoCarousel(
                     state: state,
                     imageProcessor: _imageProcessor,
-                    previewCache: _previewCache,
                   ),
                 ),
               ),
@@ -303,69 +275,93 @@ class _EditorScreenState extends State<EditorScreen> {
         color: theme.colorScheme.surfaceContainer,
         border: Border(top: BorderSide(color: theme.dividerColor, width: 1)),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      child: IntrinsicHeight(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             // Aspect ratio selector - dynamically generated
-            ...models.AspectRatios.all.map((ratio) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _buildControlButton(
-                  context,
-                  icon: _getIconForAspectRatio(ratio.iconName),
-                  label: ratio.label,
-                  isSelected: settings.aspectRatio.id == ratio.id,
-                  onTap: () {
-                    context.read<PhotoBloc>().add(
-                      UpdateAspectRatioEvent(ratio),
-                    );
-                  },
+            Expanded(
+              flex: 3,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    ...models.AspectRatios.all.map((ratio) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: _buildControlButton(
+                          context,
+                          icon: _getIconForAspectRatio(ratio.iconName),
+                          label: ratio.label,
+                          isSelected: settings.aspectRatio.id == ratio.id,
+                          onTap: () {
+                            context.read<PhotoBloc>().add(
+                              UpdateAspectRatioEvent(ratio),
+                            );
+                          },
+                        ),
+                      );
+                    }),
+                  ],
                 ),
-              );
-            }).toList(),
-
-            const SizedBox(width: 8),
-            const VerticalDivider(),
-            const SizedBox(width: 8),
-
-            // Background type selector
-            _buildControlButton(
-              context,
-              icon: Icons.wb_sunny_outlined,
-              label: 'White',
-              isSelected: settings.backgroundType == BackgroundType.white,
-              onTap: () {
-                context.read<PhotoBloc>().add(
-                  const UpdateBackgroundTypeEvent(BackgroundType.white),
-                );
-              },
+              ),
             ),
-            const SizedBox(width: 8),
-            _buildControlButton(
-              context,
-              icon: Icons.nightlight_outlined,
-              label: 'Black',
-              isSelected: settings.backgroundType == BackgroundType.black,
-              onTap: () {
-                context.read<PhotoBloc>().add(
-                  const UpdateBackgroundTypeEvent(BackgroundType.black),
-                );
-              },
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: const VerticalDivider(width: 1),
             ),
-            const SizedBox(width: 8),
-            _buildControlButton(
-              context,
-              icon: Icons.blur_on,
-              label: 'Blur',
-              isSelected:
-                  settings.backgroundType == BackgroundType.extendedBlur,
-              onTap: () {
-                context.read<PhotoBloc>().add(
-                  const UpdateBackgroundTypeEvent(BackgroundType.extendedBlur),
-                );
-              },
+            Expanded(
+              flex: 2,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    // Background type selector
+                    _buildControlButton(
+                      context,
+                      icon: Icons.wb_sunny_outlined,
+                      label: 'White',
+                      isSelected:
+                          settings.backgroundType == BackgroundType.white,
+                      onTap: () {
+                        context.read<PhotoBloc>().add(
+                          const UpdateBackgroundTypeEvent(BackgroundType.white),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildControlButton(
+                      context,
+                      icon: Icons.nightlight_outlined,
+                      label: 'Black',
+                      isSelected:
+                          settings.backgroundType == BackgroundType.black,
+                      onTap: () {
+                        context.read<PhotoBloc>().add(
+                          const UpdateBackgroundTypeEvent(BackgroundType.black),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildControlButton(
+                      context,
+                      icon: Icons.blur_on,
+                      label: 'Blur',
+                      isSelected:
+                          settings.backgroundType ==
+                          BackgroundType.extendedBlur,
+                      onTap: () {
+                        context.read<PhotoBloc>().add(
+                          const UpdateBackgroundTypeEvent(
+                            BackgroundType.extendedBlur,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

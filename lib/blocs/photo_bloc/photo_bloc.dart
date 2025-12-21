@@ -7,7 +7,7 @@ import 'photo_state.dart';
 import '../../models/photo_settings.dart';
 
 /// BLoC for managing photo selection and editing workflow.
-/// 
+///
 /// Handles:
 /// - Photo gallery selection
 /// - Photo settings (aspect ratio, scale, background, blur intensity)
@@ -21,9 +21,9 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
   PhotoBloc({
     required ExportService exportService,
     required PreferencesService preferencesService,
-  })  : _exportService = exportService,
-        _preferencesService = preferencesService,
-        super(const PhotoInitialState()) {
+  }) : _exportService = exportService,
+       _preferencesService = preferencesService,
+       super(const PhotoInitialState()) {
     on<LoadPhotosFromGalleryEvent>(_onLoadPhotosFromGallery);
     on<PhotosSelectedEvent>(_onPhotosSelected);
     on<UpdatePhotoSettingsEvent>(_onUpdatePhotoSettings);
@@ -66,8 +66,12 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
       final currentState = state as PhotosLoadedState;
       // Merge existing photos with newly selected photos
       final existingPhotos = List<AssetEntity>.from(currentState.photos);
-      final newPhotos = event.photos.where((newPhoto) =>
-          !existingPhotos.any((existing) => existing.id == newPhoto.id)).toList();
+      final newPhotos = event.photos
+          .where(
+            (newPhoto) =>
+                !existingPhotos.any((existing) => existing.id == newPhoto.id),
+          )
+          .toList();
 
       finalPhotos = existingPhotos + newPhotos;
       currentIndex = currentState.currentIndex; // Keep current index
@@ -84,14 +88,16 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     // Load saved preferences to restore last used scale and blur intensity
     final prefs = await _preferencesService.loadPreferences();
 
-    emit(PhotosLoadedState(
-      photos: finalPhotos,
-      currentIndex: currentIndex,
-      settings: PhotoSettings(
-        scale: prefs.lastUsedScale,
-        blurIntensity: prefs.lastUsedBlurIntensity,
+    emit(
+      PhotosLoadedState(
+        photos: finalPhotos,
+        currentIndex: currentIndex,
+        settings: PhotoSettings(
+          scale: prefs.lastUsedScale,
+          blurIntensity: prefs.lastUsedBlurIntensity,
+        ),
       ),
-    ));
+    );
   }
 
   /// Update all photo settings at once.
@@ -130,7 +136,7 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
         scale: event.scale,
       );
       emit(currentState.copyWith(settings: updatedSettings));
-      
+
       // Save to preferences for next session
       final prefs = await _preferencesService.loadPreferences();
       await _preferencesService.savePreferences(
@@ -164,7 +170,7 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
         blurIntensity: event.intensity,
       );
       emit(currentState.copyWith(settings: updatedSettings));
-      
+
       // Save to preferences for next session
       final prefs = await _preferencesService.loadPreferences();
       await _preferencesService.savePreferences(
@@ -185,9 +191,9 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
   }
 
   /// Export all photos with current settings.
-  /// 
-  /// Processes photos one at a time to avoid memory issues.
-  /// Emits progress updates via PhotosProcessingState.
+  /// Emits PhotosProcessingState with progress updates.
+  /// Emits PhotosExportedState when export is complete.
+  /// Emits PhotoErrorState if export fails.
   Future<void> _onExportAllPhotos(
     ExportAllPhotosEvent event,
     Emitter<PhotoState> emit,
@@ -196,30 +202,43 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
 
     final currentState = state as PhotosLoadedState;
     try {
-      // Load preferences to get metadata preservation setting
+      // Load preferences to get last used scale and blur intensity
       final preferences = await _preferencesService.loadPreferences();
 
-      // Process photos and emit progress updates
+
+      // 1. Emit 0% Progress IMMEDIATELY.
+      // This forces the UI to switch to the "Processing View" instantly.
+      emit(
+        PhotosProcessingState(
+          current: 0,
+          total: currentState.photos.length,
+          backgroundType: currentState.settings.backgroundType,
+        ),
+      );
+
+      // 2. Give the UI a tiny moment to render the new screen
+      // before we start blocking the thread with directory creation/logic.
+      await Future.delayed(const Duration(milliseconds: 50));
+
+
+      // 3. Now start the heavy stream
       await for (final progress in _exportService.exportPhotos(
         photos: currentState.photos,
         settings: currentState.settings,
         preserveMetadata: preferences.preserveMetadata,
       )) {
-        emit(PhotosProcessingState(
-          current: progress,
-          total: currentState.photos.length,
-          backgroundType: currentState.settings.backgroundType,
-        ));
+        emit(
+          PhotosProcessingState(
+            current: progress,
+            total: currentState.photos.length,
+            backgroundType: currentState.settings.backgroundType,
+          ),
+        );
       }
 
-      // Export complete - emit success state
       emit(PhotosExportedState(currentState.photos.length));
-      
-      // Note: We don't automatically return to loaded state here.
-      // The UI will handle navigation and clear photos when appropriate.
     } catch (e) {
       emit(PhotoErrorState('Export failed: $e'));
-      // Return to loaded state so user can retry
       await Future.delayed(const Duration(seconds: 2));
       emit(currentState);
     }
@@ -233,4 +252,3 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     emit(const PhotoInitialState());
   }
 }
-
