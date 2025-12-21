@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:photo_manager/photo_manager.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_event.dart';
@@ -19,7 +18,7 @@ import '../blocs/photo_bloc/photo_state.dart';
 /// - Error handling with user-friendly dialogs
 class PhotoPickerScreen {
   /// Launch the photo picker and handle photo selection.
-  ///
+  /// 
   /// Workflow:
   /// 1. Request Android photo permissions
   /// 2. Show permission dialog if denied
@@ -68,7 +67,6 @@ class PhotoPickerScreen {
           dragToSelect:
               false, //could be annoying for some users, todo: add a setting for this
           
-
           sortPathsByModifiedDate: true, // Show recent photos first
         ),
       );

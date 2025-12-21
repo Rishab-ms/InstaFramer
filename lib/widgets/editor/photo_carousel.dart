@@ -10,6 +10,7 @@ import '../../screens/photo_picker_screen.dart';
 import '../../services/image_processor.dart';
 import 'add_photos_card.dart';
 import 'photo_card.dart';
+import 'simple_photo_placeholder.dart';
 
 /// Photo carousel widget for displaying and navigating through selected photos.
 ///
@@ -64,15 +65,30 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
             );
           }
 
-          // Regular photo card
-          return PhotoCard(
-            photoIndex: index,
-            photo: widget.state.photos[index],
-            settings: widget.state.settings,
-            currentIndex: widget.state.currentIndex,
-            imageProcessor: widget.imageProcessor,
-            previewCache: widget.previewCache,
+          // Check if this photo is in viewport (current + adjacent)
+          final isInViewport = _isPhotoInViewport(
+            index,
+            widget.state.currentIndex,
           );
+
+          if (isInViewport) {
+            // Use PhotoCard for viewport photos (with full processing)
+            return PhotoCard(
+              photoIndex: index,
+              photo: widget.state.photos[index],
+              settings: widget.state.settings,
+              currentIndex: widget.state.currentIndex,
+              imageProcessor: widget.imageProcessor,
+              previewCache: widget.previewCache,
+            );
+          } else {
+            // Use simple placeholder for non-viewport photos (lightweight)
+            return SimplePhotoPlaceholder(
+              photoIndex: index,
+              currentIndex: widget.state.currentIndex,
+              aspectRatio: widget.state.settings.aspectRatio.ratio,
+            );
+          }
         },
       ),
     );
@@ -86,4 +102,14 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
     PhotoPickerScreen.pickPhotos(context);
   }
 
+  /// Check if a photo index is currently in the viewport.
+  ///
+  /// Only processes current photo and adjacent photos for performance.
+  /// Especially important for blur backgrounds which are computationally expensive.
+  bool _isPhotoInViewport(int photoIndex, int currentIndex) {
+    final distance = (photoIndex - currentIndex).abs();
+    // Include current photo and adjacent photos (distance <= 1)
+    // This gives smooth scrolling experience while limiting processing
+    return distance <= 1;
+  }
 }

@@ -40,3 +40,4 @@ class PreserveMetadataSwitch extends StatelessWidget {
     );
   }
 }
+

@@ -44,10 +44,6 @@ class PhotoCard extends StatefulWidget {
 class _PhotoCardState extends State<PhotoCard> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    // Calculate if this photo is in viewport (current + adjacent photos)
-    final isInViewport = _isPhotoInViewport(widget.photoIndex, widget.currentIndex);
     final isCurrentPhoto = widget.photoIndex == widget.currentIndex;
 
     return Card(
@@ -55,127 +51,95 @@ class _PhotoCardState extends State<PhotoCard> {
       color: Colors.transparent,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       clipBehavior: Clip.antiAlias,
-      child: isInViewport
-          ? FutureBuilder<Uint8List?>(
-              // Only process photos in viewport
-              future: _generatePreview(widget.photo, widget.settings),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  // Show loading state with skeleton
-                  return Container(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 48,
-                            height: 48,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: theme.colorScheme.primary.withOpacity(0.7),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            isCurrentPhoto ? 'Processing preview...' : 'Loading...',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError || !snapshot.hasData) {
-                  return Container(
-                    color: theme.colorScheme.errorContainer,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.broken_image,
-                            size: 64,
-                            color: theme.colorScheme.error,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Failed to load preview',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.error,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                // Display the processed preview
-                // Wrap in AspectRatio to maintain proper dimensions in carousel
-                return AspectRatio(
-                  aspectRatio: widget.settings.aspectRatio.ratio,
-                  child: Image.memory(snapshot.data!, fit: BoxFit.contain),
-                );
-              },
-            )
-          : _buildViewportPlaceholder(context, widget.photoIndex, widget.currentIndex, widget.settings),
+      child: _buildViewportContent(context, isCurrentPhoto),
     );
   }
 
-  /// Check if a photo index is currently in the viewport.
-  ///
-  /// Only processes current photo and adjacent photos for performance.
-  /// Especially important for blur backgrounds which are computationally expensive.
-  bool _isPhotoInViewport(int photoIndex, int currentIndex) {
-    final distance = (photoIndex - currentIndex).abs();
-    // Include current photo and adjacent photos (distance <= 1)
-    // This gives smooth scrolling experience while limiting processing
-    return distance <= 1;
-  }
-
-  /// Build placeholder for photos not in viewport.
-  ///
-  /// Shows a lightweight placeholder to avoid processing photos not visible.
-  Widget _buildViewportPlaceholder(
-    BuildContext context,
-    int photoIndex,
-    int currentIndex,
-    dynamic settings,
-  ) {
+  /// Build content for viewport photos, optimizing for cached vs uncached previews.
+  Widget _buildViewportContent(BuildContext context, bool isCurrentPhoto) {
     final theme = Theme.of(context);
 
-    return Container(
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.image,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Photo ${photoIndex + 1}',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Swipe to preview',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-              ),
-            ),
-          ],
+    // Generate cache key to check if preview is already available
+    final scaleRounded = (widget.settings.scale * 100).round();
+    final cacheKey =
+        '${widget.photoIndex}_${widget.settings.aspectRatio.id}_${scaleRounded}_${widget.settings.backgroundType}_${widget.settings.blurIntensity}_${widget.settings.imageQuality}_${widget.settings.imageSize}';
+
+    // If preview is cached, show it immediately without FutureBuilder
+    if (widget.previewCache.containsKey(cacheKey)) {
+      return AspectRatio(
+        aspectRatio: widget.settings.aspectRatio.ratio,
+        child: Image.memory(
+          widget.previewCache[cacheKey]!,
+          fit: BoxFit.contain,
         ),
-      ),
+      );
+    }
+
+    // Preview not cached, use FutureBuilder for async generation
+    return FutureBuilder<Uint8List?>(
+      future: _generatePreview(widget.photo, widget.settings),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show loading state with skeleton
+          return Container(
+            color: theme.colorScheme.surfaceContainerHighest,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: theme.colorScheme.primary.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isCurrentPhoto ? 'Processing preview...' : 'Loading...',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.hasError || !snapshot.hasData) {
+          return Container(
+            color: theme.colorScheme.errorContainer,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.broken_image,
+                    size: 64,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Failed to load preview',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Display the processed preview
+        // Wrap in AspectRatio to maintain proper dimensions in carousel
+        return AspectRatio(
+          aspectRatio: widget.settings.aspectRatio.ratio,
+          child: Image.memory(snapshot.data!, fit: BoxFit.contain),
+        );
+      },
     );
   }
 
@@ -187,11 +151,13 @@ class _PhotoCardState extends State<PhotoCard> {
     AssetEntity photo,
     dynamic settings,
   ) async {
-    // Generate cache key based on photo ID and all relevant settings
-    // Generate consistent cache key using aspect ratio ID and rounded scale
-    final scaleRounded = (settings.scale * 100).round(); // Convert to percentage (0-100)
+    // Generate cache key based on photo index and all relevant settings
+    // Format: "photoIndex_aspectRatioId_scale_backgroundType_blurIntensity_imageQuality_imageSize"
+    // Include photo index for proper cache management and priority calculation
+    final scaleRounded = (settings.scale * 100)
+        .round(); // Convert to percentage (0-100)
     final cacheKey =
-        '${photo.id}_${settings.aspectRatio.id}_${scaleRounded}_${settings.backgroundType}_${settings.blurIntensity}_${settings.imageQuality}_${settings.imageSize}';
+        '${widget.photoIndex}_${settings.aspectRatio.id}_${scaleRounded}_${settings.backgroundType}_${settings.blurIntensity}_${settings.imageQuality}_${settings.imageSize}';
 
     // Return cached preview if available
     if (widget.previewCache.containsKey(cacheKey)) {
@@ -199,7 +165,10 @@ class _PhotoCardState extends State<PhotoCard> {
     }
 
     // Process preview using optimized method (uses thumbnail, not full res)
-    final previewBytes = await widget.imageProcessor.processPreview(photo, settings);
+    final previewBytes = await widget.imageProcessor.processPreview(
+      photo,
+      settings,
+    );
 
     // Cache the result for instant retrieval on swipe-back
     widget.previewCache[cacheKey] = previewBytes;
@@ -213,7 +182,8 @@ class _PhotoCardState extends State<PhotoCard> {
   /// Smart cache size management with priority-based eviction.
   /// Maintains optimal cache size while preserving frequently accessed previews.
   void _maintainOptimalCacheSize() {
-    const maxCacheSize = 12; // Slightly larger than before for better performance
+    const maxCacheSize =
+        12; // Slightly larger than before for better performance
 
     if (widget.previewCache.length <= maxCacheSize) return;
 
@@ -223,11 +193,13 @@ class _PhotoCardState extends State<PhotoCard> {
     final priorityMap = <String, int>{};
 
     for (final key in widget.previewCache.keys) {
-      // Extract photo index from cache key (format: "photoId_aspectRatioId_scale_...")
+      // Extract photo index from cache key (format: "photoIndex_aspectRatioId_scale_...")
       final parts = key.split('_');
-      if (parts.length >= 2) {
+      if (parts.isNotEmpty) {
         try {
-          final photoIndex = int.parse(parts[0]); // Assuming photo.id is index-based
+          final photoIndex = int.parse(
+            parts[0],
+          ); // Photo index is now the first part
 
           // Calculate distance from current carousel position
           final distance = (photoIndex - currentIndex).abs();
@@ -248,7 +220,9 @@ class _PhotoCardState extends State<PhotoCard> {
 
     // Keep highest priority items, remove others
     final keysToKeep = sortedKeys.take(maxCacheSize).toSet();
-    final keysToRemove = widget.previewCache.keys.where((key) => !keysToKeep.contains(key)).toList();
+    final keysToRemove = widget.previewCache.keys
+        .where((key) => !keysToKeep.contains(key))
+        .toList();
 
     for (final key in keysToRemove) {
       widget.previewCache.remove(key);
