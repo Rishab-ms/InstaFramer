@@ -73,15 +73,18 @@ class PhotosProcessingState extends PhotoState {
   final int total;
   final double progress;
   final BackgroundType backgroundType;
+  final List<AssetEntity> photos;
 
   const PhotosProcessingState({
     required this.current,
     required this.total,
     required this.backgroundType,
+    required this.photos,
   }) : progress = current / total;
 
+
   @override
-  List<Object?> get props => [current, total, progress, backgroundType];
+  List<Object?> get props => [current, total, progress, backgroundType, photos];
 }
 
 /// Success state after all photos are exported.

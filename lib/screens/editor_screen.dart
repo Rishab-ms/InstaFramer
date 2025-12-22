@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gal/gal.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_event.dart';
@@ -49,52 +50,69 @@ class _EditorScreenState extends State<EditorScreen> {
       listener: (context, state) {
         // Show success message when export completes
         if (state is PhotosExportedState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '✅ Exported ${state.count} photos successfully!',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+          // 1. Haptic Feedback (Optional but nice)
+          // HapticFeedback.mediumImpact();
+
+          // 2. Show Success Sheet
+          showModalBottomSheet(
+            context: context,
+            isDismissible: false,
+            enableDrag: false,
+            useSafeArea: true,
+            backgroundColor: Colors.transparent, // Floating look
+            builder: (context) => Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
                 ),
               ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-              behavior: SnackBarBehavior.floating,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.green, size: 64),
+                  const SizedBox(height: 16),
+                  Text(
+                    'All Done! 🎉',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  Text(
+                    '${state.count} photos saved to gallery.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 24),
 
-              action: SnackBarAction(
-                label: 'View',
-                textColor: Colors.white,
-                onPressed: () async {
-                  // Open gallery app to view exported photos
-                  try {
-                    await Gal.open();
-                  } catch (e) {
-                    // If opening gallery fails, show error
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Could not open gallery: $e'),
-                          backgroundColor: Colors.orange,
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(context); // Close sheet
+                            context.read<PhotoBloc>().add(
+                              const ClearPhotosEvent(),
+                            );
+                            Navigator.of(context).popUntil((r) => r.isFirst);
+                          },
+                          child: const Text('Home'),
                         ),
-                      );
-                    }
-                  }
-                },
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () => Gal.open(), // Open Gallery
+                          icon: const Icon(Icons.photo_library),
+                          label: const Text('View Photos'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
           );
-
-          // Navigate back to home and clear photos after brief delay
-          // This allows the snackbar to be visible for a moment
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted && context.mounted) {
-              // Clear photos first to reset state
-              context.read<PhotoBloc>().add(const ClearPhotosEvent());
-              // Then navigate back to home
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            }
-          });
         }
 
         // Show error messages
@@ -111,7 +129,7 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (context, state) {
         // Handle different states
         if (state is PhotosProcessingState) {
-          return _buildProcessingView(state);
+          return _buildProcessingView(state,);
         }
 
         if (state is PhotosLoadedState) {
@@ -540,101 +558,94 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   /// Build processing view during export.
-  Widget _buildProcessingView(PhotosProcessingState state) {
+  Widget _buildProcessingView(
+    PhotosProcessingState state,
+    
+  ) {
     final theme = Theme.of(context);
-
+    // Calculate which photo to show (safe clamp)
+  final photoIndex = state.current.clamp(0, state.photos.length - 1);
+  final currentPhoto = state.photos[photoIndex];
     return PopScope(
-      canPop: false, // Prevent back navigation during export
-      onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) {
-          // Show confirmation dialog if pop was prevented
-          final shouldPop = await _showLeaveConfirmationDialog(context);
-          if (shouldPop && context.mounted) {
-            Navigator.of(context).pop();
-          }
-        }
-      },
+      canPop: false,
       child: Scaffold(
         backgroundColor: theme.colorScheme.surface,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Circular progress indicator
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Background circle
-                    SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: CircularProgressIndicator(
-                        value: state.progress,
-                        strokeWidth: 8,
-                        backgroundColor:
-                            theme.colorScheme.surfaceContainerHighest,
-                        color: theme.colorScheme.primary,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 1. ANIMATED THUMBNAIL
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // The Image
+                          AssetEntityImage(
+                            currentPhoto,
+                            isOriginal: false,
+                            thumbnailSize: const ThumbnailSize.square(500),
+                            fit: BoxFit.cover,
+                          ),
+                          // Overlay Darken
+                          Container(color: Colors.black45),
+                          // Progress Indicator ON TOP of image
+                          CircularProgressIndicator(
+                            value: state.progress,
+                            strokeWidth: 6,
+                            color: Colors.white,
+                            backgroundColor: Colors.white24,
+                          ),
+                          // Text ON TOP of image
+                          Positioned(
+                            bottom: 20,
+                            child: Text(
+                              '${(state.progress * 100).toInt()}%',
+                              style: theme.textTheme.headlineLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    // Percentage text
-                    Text(
-                      '${(state.progress * 100).toInt()}%',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Exporting Photos...',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${state.current} of ${state.total} completed',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 32),
-              // Linear progress bar for additional feedback
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 48),
-                child: LinearProgressIndicator(
-                  value: state.progress,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              if (state.backgroundType == BackgroundType.extendedBlur) ...[
+
                 const SizedBox(height: 32),
+
+                // 2. TEXT STATUS
                 Text(
-                  'Blur processing takes longer - please wait',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
+                  'Polishing Photo ${state.current + 1} of ${state.total}...',
+                  style: theme.textTheme.titleMedium,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Do not leave this page during export',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontStyle: FontStyle.italic,
+
+                if (state.backgroundType == BackgroundType.extendedBlur) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Applying Blur (Heavy Task) 🎨',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

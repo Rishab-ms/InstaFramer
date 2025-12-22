@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../services/export_service.dart';
 import '../../services/preferences_service.dart';
 import 'photo_event.dart';
@@ -199,12 +200,12 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     Emitter<PhotoState> emit,
   ) async {
     if (state is! PhotosLoadedState) return;
+    WakelockPlus.enable(); // Prevent device from sleeping
 
     final currentState = state as PhotosLoadedState;
     try {
       // Load preferences to get last used scale and blur intensity
       final preferences = await _preferencesService.loadPreferences();
-
 
       // 1. Emit 0% Progress IMMEDIATELY.
       // This forces the UI to switch to the "Processing View" instantly.
@@ -213,13 +214,13 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
           current: 0,
           total: currentState.photos.length,
           backgroundType: currentState.settings.backgroundType,
+          photos: currentState.photos,
         ),
       );
 
       // 2. Give the UI a tiny moment to render the new screen
       // before we start blocking the thread with directory creation/logic.
       await Future.delayed(const Duration(milliseconds: 50));
-
 
       // 3. Now start the heavy stream
       await for (final progress in _exportService.exportPhotos(
@@ -232,6 +233,7 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
             current: progress,
             total: currentState.photos.length,
             backgroundType: currentState.settings.backgroundType,
+            photos: currentState.photos,
           ),
         );
       }
@@ -241,6 +243,8 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
       emit(PhotoErrorState('Export failed: $e'));
       await Future.delayed(const Duration(seconds: 2));
       emit(currentState);
+    } finally {
+      WakelockPlus.disable(); // Allow device to sleep again
     }
   }
 
