@@ -65,3 +65,4 @@ class SimplePhotoPlaceholder extends StatelessWidget {
     );
   }
 }
+
