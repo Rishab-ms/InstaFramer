@@ -53,12 +53,12 @@ git push origin "${TAG}"
 echo -e "${GREEN}🎉 Release ${TAG} created!${NC}"
 echo -e "${BLUE}📋 Next steps:${NC}"
 echo -e "  1. GitHub Actions will automatically build and create the release"
-echo -e "  2. Go to https://github.com/your-username/instaframe/releases"
+echo -e "  2. Go to https://github.com/rishab-ms/instaframe/releases"
 echo -e "  3. Edit the release notes and publish"
 echo -e "  4. Users can now download ${APK_NAME} from the releases page"
 
 # Optional: Open browser to releases page
 if command -v open &> /dev/null; then
     echo -e "${BLUE}🌐 Opening releases page...${NC}"
-    open "https://github.com/your-username/instaframe/releases"
+    open "https://github.com/rishab-ms/instaframe/releases"
 fi
