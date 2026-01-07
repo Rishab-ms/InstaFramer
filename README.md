@@ -14,6 +14,17 @@
 ## 📱 What is InstaFrame?
 
 InstaFrame is a mobile app that simplifies photo preparation for Instagram creators. Instead of editing photos one by one, apply consistent framing to multiple photos at once - perfect for creating uniform carousels where each photo stands alone with professional borders and backgrounds.
+## 📸 Screenshots
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f103d026-03ab-4bac-817f-2474f5343ea7" width="22%" />
+  <img src="https://github.com/user-attachments/assets/ef58b0d6-58c5-4993-ab04-08f354b7e4d1" width="22%" />
+  <img src="https://github.com/user-attachments/assets/86868119-cf7a-480c-a55f-7461372ed8d2" width="22%" />
+<img src= "https://github.com/user-attachments/assets/9de361d8-bbb0-416a-9552-275e6367b3d9" width="22%">
+
+</p>
+
+
 
 ### 🖼️ **Current: Framer Module**
 The core functionality allows you to select multiple photos and apply consistent Instagram-optimized framing with white, black, or blur backgrounds.
