@@ -5,6 +5,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_event.dart';
 import '../blocs/photo_bloc/photo_state.dart';
+import '../services/photo_permission_service.dart';
 
 /// Photo picker service for InstaFramer.
 ///
@@ -18,7 +19,7 @@ import '../blocs/photo_bloc/photo_state.dart';
 /// - Error handling with user-friendly dialogs
 class PhotoPickerScreen {
   /// Launch the photo picker and handle photo selection.
-  /// 
+  ///
   /// Workflow:
   /// 1. Request Android photo permissions
   /// 2. Show permission dialog if denied
@@ -28,13 +29,9 @@ class PhotoPickerScreen {
   /// [context] - BuildContext to access BLoC and show dialogs
   static Future<void> pickPhotos(BuildContext context) async {
     try {
-      // Request photo access permission from Android
-      // Handles both Android 13+ granular permissions and legacy storage permissions
-      final PermissionState permissionState =
-          await PhotoManager.requestPermissionExtend();
-
-      if (permissionState != PermissionState.authorized &&
-          permissionState != PermissionState.limited) {
+      final hasPermission =
+          await PhotoPermissionService.requestPhotosPermission();
+      if (!hasPermission) {
         // Permission denied - show dialog to guide user to settings
         if (context.mounted) {
           _showPermissionDeniedDialog(context);
@@ -66,7 +63,7 @@ class PhotoPickerScreen {
           themeColor: Theme.of(context).colorScheme.primary,
           dragToSelect:
               false, //could be annoying for some users, todo: add a setting for this
-          
+
           sortPathsByModifiedDate: true, // Show recent photos first
         ),
       );
@@ -88,7 +85,6 @@ class PhotoPickerScreen {
       }
     }
   }
-
 
   /// Build camera button widget for special item position.
   ///

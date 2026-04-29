@@ -8,13 +8,13 @@ import 'photo_picker_screen.dart';
 import 'preferences_screen.dart';
 
 /// Home screen of InstaFramer - the landing page of the app.
-/// 
+///
 /// Displays:
 /// - App branding and description
 /// - Feature highlights (aspect ratios, backgrounds, scaling)
 /// - "Select Photos" button to launch the gallery picker
 /// - Settings button in app bar
-/// 
+///
 /// Automatically navigates to [EditorScreen] when photos are selected.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-       backgroundColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -43,17 +43,19 @@ class HomeScreen extends StatelessWidget {
         listenWhen: (previous, current) {
           // Only navigate when transitioning TO PhotosLoadedState from a non-loaded state
           // This prevents navigation during ongoing editor operations
-          return (previous is! PhotosLoadedState && current is PhotosLoadedState) ||
-                 current is PhotoErrorState;
+          //from external share context:
+          // If app starts cold via share: previous is InitialState, current is LoadedState -> Returns TRUE
+          // If app is running: previous is LoadingState (from picker), current is LoadedState -> Returns TRUE
+          return (previous is! PhotosLoadedState &&
+                  current is PhotosLoadedState) ||
+              current is PhotoErrorState;
         },
         listener: (context, state) {
           // Navigate to editor when photos are successfully loaded (first time only)
           if (state is PhotosLoadedState) {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const EditorScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const EditorScreen()),
             );
           } else if (state is PhotoErrorState) {
             // Show error message as a snackbar
@@ -86,7 +88,7 @@ class HomeScreen extends StatelessWidget {
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(height: AppTheme.spacingLarge),
-                  
+
                   // App Title
                   Text(
                     'InstaFramer',
@@ -96,7 +98,7 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppTheme.spacingSmall),
-                  
+
                   // App Description
                   Text(
                     'Frame your photos perfectly for Instagram',
@@ -106,7 +108,7 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppTheme.spacingXLarge),
-                  
+
                   // Features List
                   _FeatureItem(
                     icon: Icons.aspect_ratio,
@@ -126,12 +128,10 @@ class HomeScreen extends StatelessWidget {
                     description: 'Control exactly how your photo fits',
                   ),
                   const SizedBox(height: AppTheme.spacingXLarge),
-                  
+
                   // Select Photos Button
                   if (state is PhotosLoadingState)
-                    const Center(
-                      child: CircularProgressIndicator(),
-                    )
+                    const Center(child: CircularProgressIndicator())
                   else
                     FilledButton.icon(
                       onPressed: () {
@@ -146,11 +146,13 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(AppTheme.minTouchTarget + 8),
+                        minimumSize: const Size.fromHeight(
+                          AppTheme.minTouchTarget + 8,
+                        ),
                       ),
                     ),
                   const SizedBox(height: AppTheme.spacingMedium),
-                  
+
                   // Info Text
                   Text(
                     'Select up to 30 photos from your gallery',
@@ -170,7 +172,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 /// Feature item widget displaying an icon, title, and description.
-/// 
+///
 /// Used to highlight key features on the home screen.
 class _FeatureItem extends StatelessWidget {
   final IconData icon;
@@ -226,4 +228,3 @@ class _FeatureItem extends StatelessWidget {
     );
   }
 }
-

@@ -31,7 +31,6 @@ class ExportService {
 
     try {
       final batchSize = _calculateAdaptiveBatchSize();
-      var completedCount = 0;
 
       for (var batchStart = 0; batchStart < photos.length; batchStart += batchSize) {
         final batchEnd = (batchStart + batchSize).clamp(0, photos.length);
@@ -84,7 +83,6 @@ class ExportService {
         for (final result in results) {
           if (result != null) {
             yield result;
-            completedCount++;
           }
         }
       }
