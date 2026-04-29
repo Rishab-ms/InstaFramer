@@ -1,64 +1,113 @@
 #!/bin/bash
 
 # InstaFrame Release Script
-# This script builds the APK and creates a GitHub release
+# Builds APK (if needed) and creates a GitHub release tag
 
 set -e
 
-# Colors for output
+# ----------------------------
+# Colors
+# ----------------------------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo -e "${BLUE}🚀 InstaFrame Release Script${NC}"
 
-# Check if version is provided
-if [ $# -eq 0 ]; then
+# ----------------------------
+# Args
+# ----------------------------
+if [ $# -lt 1 ]; then
     echo -e "${RED}❌ Error: Please provide a version number${NC}"
-    echo -e "${YELLOW}Usage: $0 <version>${NC}"
-    echo -e "${YELLOW}Example: $0 1.0.0${NC}"
+    echo -e "${YELLOW}Usage: $0 <version> [--force]${NC}"
+    echo -e "${YELLOW}Example: $0 1.2.4 --force${NC}"
     exit 1
 fi
 
-VERSION=$1
+VERSION="$1"
+FORCE_BUILD=false
+
+if [[ "$2" == "--force" ]]; then
+    FORCE_BUILD=true
+fi
+
 TAG="v${VERSION}"
-
-echo -e "${BLUE}📦 Building InstaFrame v${VERSION}${NC}"
-
-# Clean and get dependencies
-echo -e "${YELLOW}🔧 Installing dependencies...${NC}"
-flutter clean
-flutter pub get
-
-# Build APK
-echo -e "${YELLOW}🏗️ Building APK...${NC}"
-flutter build apk --release
-
-# Rename APK with version
 APK_NAME="InstaFrame-v${VERSION}.apk"
-mv build/app/outputs/flutter-apk/app-release.apk "${APK_NAME}"
 
-echo -e "${GREEN}✅ APK built: ${APK_NAME}${NC}"
+echo -e "${BLUE}📦 Preparing release ${TAG}${NC}"
 
-# Create git tag
+# ----------------------------
+# APK build logic
+# ----------------------------
+if [[ -f "${APK_NAME}" && "${FORCE_BUILD}" == false ]]; then
+    echo -e "${GREEN}✅ APK already exists: ${APK_NAME}${NC}"
+    echo -e "${GREEN}♻️ Reusing existing APK (use --force to rebuild)${NC}"
+else
+    if [[ -f "${APK_NAME}" ]]; then
+        echo -e "${YELLOW}⚠️ APK exists but --force specified. Rebuilding...${NC}"
+    else
+        echo -e "${YELLOW}🏗️ APK not found. Building...${NC}"
+    fi
+
+    echo -e "${YELLOW}🔧 Installing dependencies...${NC}"
+    flutter clean
+    flutter pub get
+
+    echo -e "${YELLOW}🏗️ Building APK...${NC}"
+    flutter build apk --release
+
+    mv build/app/outputs/flutter-apk/app-release.apk "${APK_NAME}"
+
+    echo -e "${GREEN}✅ APK built: ${APK_NAME}${NC}"
+fi
+
+# ----------------------------
+# GitHub authentication (forced)
+# ----------------------------
+if [ -z "$GITHUB_PAT" ]; then
+    echo -e "${RED}❌ GITHUB_PAT not set. Aborting.${NC}"
+    exit 1
+fi
+
+echo -e "${YELLOW}🔐 Configuring GitHub authentication...${NC}"
+
+git config user.name "Rishab"
+git config user.email "rishabms80@gmail.com"
+
+ORIGINAL_REMOTE=$(git remote get-url origin)
+git remote set-url origin "https://Rishab-ms:${GITHUB_PAT}@github.com/Rishab-ms/InstaFramer.git"
+
+# ----------------------------
+# Git tagging
+# ----------------------------
+if git rev-parse "${TAG}" >/dev/null 2>&1; then
+    echo -e "${RED}❌ Git tag ${TAG} already exists. Aborting.${NC}"
+    git remote set-url origin "$ORIGINAL_REMOTE"
+    exit 1
+fi
+
 echo -e "${YELLOW}🏷️ Creating git tag...${NC}"
 git tag -a "${TAG}" -m "Release ${TAG}"
 
-# Push tag to trigger GitHub Actions
 echo -e "${YELLOW}📤 Pushing tag to GitHub...${NC}"
 git push origin "${TAG}"
 
-echo -e "${GREEN}🎉 Release ${TAG} created!${NC}"
-echo -e "${BLUE}📋 Next steps:${NC}"
-echo -e "  1. GitHub Actions will automatically build and create the release"
-echo -e "  2. Go to https://github.com/your-username/instaframe/releases"
-echo -e "  3. Edit the release notes and publish"
-echo -e "  4. Users can now download ${APK_NAME} from the releases page"
+# Restore remote
+git remote set-url origin "$ORIGINAL_REMOTE"
 
-# Optional: Open browser to releases page
+# ----------------------------
+# Done
+# ----------------------------
+echo -e "${GREEN}🎉 Release ${TAG} created successfully!${NC}"
+echo -e "${BLUE}📋 Next steps:${NC}"
+echo -e "  1. GitHub Actions will run automatically"
+echo -e "  2. Review release at:"
+echo -e "     https://github.com/Rishab-ms/InstaFramer/releases"
+echo -e "  3. Publish release & upload ${APK_NAME}"
+
 if command -v open &> /dev/null; then
-    echo -e "${BLUE}🌐 Opening releases page...${NC}"
-    open "https://github.com/your-username/instaframe/releases"
+    open "https://github.com/Rishab-ms/InstaFramer/releases"
 fi
+

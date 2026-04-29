@@ -1,7 +1,12 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:share_handler/share_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../services/export_service.dart';
+import '../../services/photo_permission_service.dart';
 import '../../services/preferences_service.dart';
 import 'photo_event.dart';
 import 'photo_state.dart';
@@ -18,6 +23,8 @@ import '../../models/photo_settings.dart';
 class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
   final ExportService _exportService;
   final PreferencesService _preferencesService;
+  StreamSubscription? _shareSubscription;
+  bool _shareListenerInitialized = false;
 
   PhotoBloc({
     required ExportService exportService,
@@ -25,8 +32,10 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
   }) : _exportService = exportService,
        _preferencesService = preferencesService,
        super(const PhotoInitialState()) {
+    _initShareListener();
     on<LoadPhotosFromGalleryEvent>(_onLoadPhotosFromGallery);
     on<PhotosSelectedEvent>(_onPhotosSelected);
+    on<ExternalMediaSharedEvent>(_onExternalMediaShared);
     on<UpdatePhotoSettingsEvent>(_onUpdatePhotoSettings);
     on<UpdateAspectRatioEvent>(_onUpdateAspectRatio);
     on<UpdateScaleEvent>(_onUpdateScale);
@@ -35,6 +44,60 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     on<UpdateCurrentIndexEvent>(_onUpdateCurrentIndex);
     on<ExportAllPhotosEvent>(_onExportAllPhotos);
     on<ClearPhotosEvent>(_onClearPhotos);
+  }
+
+  /// Initializes the inbound share listener (Android-only for now).
+  ///
+  /// Notes:
+  /// - We subscribe to `sharedMediaStream` **before** reading initial media to
+  ///   avoid missing a warm-share event during startup races.
+  /// - This is idempotent to keep hot restarts / rebuilds safe.
+  /// - Platform failures are swallowed so app startup can't be crashed by share
+  ///   plumbing.
+  void _initShareListener() async {
+    if (_shareListenerInitialized) return;
+    _shareListenerInitialized = true;
+
+    final handler = ShareHandlerPlatform.instance;
+
+    // Handle "Warm Start" (app already running / backgrounded)
+    _shareSubscription = handler.sharedMediaStream.listen(_processMedia);
+
+    // Handle "Cold Start" (app launched via share intent)
+    try {
+      final initialMedia = await handler.getInitialSharedMedia();
+      if (initialMedia != null) {
+        _processMedia(initialMedia);
+      }
+    } catch (_) {
+      // If the platform handler throws, do not crash app startup.
+    }
+  }
+
+  void _processMedia(SharedMedia media) {
+    // Share callbacks may arrive after bloc disposal (e.g. app exit).
+    if (isClosed) return;
+    final paths = media.attachments
+        ?.where((a) => a?.type == SharedAttachmentType.image)
+        .map((a) => a!.path)
+        .toList();
+
+    if (paths != null && paths.isNotEmpty) {
+      // BLoC rule of thumb:
+      // - Use `emit(...)` only inside an `on<Event>((event, emit) { ... })` handler.
+      // - If you're in a callback (like this platform share stream), use `add(...)`
+      //   to enqueue an event and let the bloc handle it in one place.
+      // Otherwise, calling `emit` from here can cause confusing state ordering
+      // (it bypasses the bloc's event queue), and can even fail if it happens
+      // while the bloc is already processing another event.
+      add(ExternalMediaSharedEvent(paths));
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _shareSubscription?.cancel();
+    return super.close();
   }
 
   /// Handle photo gallery picker launch.
@@ -97,6 +160,98 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
           scale: prefs.lastUsedScale,
           blurIntensity: prefs.lastUsedBlurIntensity,
         ),
+      ),
+    );
+  }
+
+  /// Handles shared file paths coming in via the platform share sheet.
+  ///
+  /// The editor/export pipeline is currently built around `AssetEntity`, so we
+  /// bridge the incoming paths into `AssetEntity` values using
+  /// `PhotoManager.editor.saveImageWithPath`.
+  ///
+  /// Trade-off: `saveImageWithPath` imports/copies the file into the user’s
+  /// photo library so it can be represented as an `AssetEntity`. Avoiding
+  /// gallery duplication would require a broader refactor to support a `File` /
+  /// bytes-backed model end-to-end.
+  Future<void> _onExternalMediaShared(
+    ExternalMediaSharedEvent event,
+    Emitter<PhotoState> emit,
+  ) async {
+    emit(const PhotosLoadingState());
+
+    final hasPermission =
+        await PhotoPermissionService.requestPhotosPermission();
+    if (!hasPermission) {
+      emit(const PhotoErrorState('Photo permission denied'));
+      return;
+    }
+
+    final uniquePaths = event.filePaths
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toSet()
+        .toList();
+
+    final resolvedPaths = <String>[];
+    for (final p in uniquePaths) {
+      final resolvedPath = p.startsWith('file://')
+          ? Uri.parse(p).toFilePath()
+          : p;
+      if (await File(resolvedPath).exists()) {
+        resolvedPaths.add(resolvedPath);
+      }
+    }
+
+    if (resolvedPaths.isEmpty) {
+      emit(const PhotoErrorState('No valid shared images found'));
+      return;
+    }
+
+    final assets = <AssetEntity>[];
+    for (final path in resolvedPaths.take(30)) {
+      try {
+        final title = path.split(Platform.pathSeparator).last;
+        final entity = await PhotoManager.editor.saveImageWithPath(
+          path,
+          title: title,
+        );
+        assets.add(entity);
+      } catch (_) {
+        // Skip unreadable paths.
+      }
+    }
+
+    if (assets.isEmpty) {
+      emit(const PhotoErrorState('Failed to import shared images'));
+      return;
+    }
+
+    final currentState = state is PhotosLoadedState
+        ? state as PhotosLoadedState
+        : null;
+    final existingPhotos = currentState?.photos ?? const <AssetEntity>[];
+    final newPhotos = assets
+        .where(
+          (newPhoto) =>
+              !existingPhotos.any((existing) => existing.id == newPhoto.id),
+        )
+        .toList();
+
+    final merged = (existingPhotos + newPhotos);
+    final capped = merged.length > 30 ? merged.sublist(0, 30) : merged;
+
+    final prefs = await _preferencesService.loadPreferences();
+    emit(
+      PhotosLoadedState(
+        photos: capped,
+        currentIndex: currentState?.currentIndex ?? 0,
+        settings:
+            currentState?.settings ??
+            PhotoSettings(
+              scale: prefs.lastUsedScale,
+              blurIntensity: prefs.lastUsedBlurIntensity,
+            ),
       ),
     );
   }
