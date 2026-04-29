@@ -14,6 +14,17 @@
 ## 📱 What is InstaFrame?
 
 InstaFrame is a mobile app that simplifies photo preparation for Instagram creators. Instead of editing photos one by one, apply consistent framing to multiple photos at once - perfect for creating uniform carousels where each photo stands alone with professional borders and backgrounds.
+## 📸 Screenshots
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f103d026-03ab-4bac-817f-2474f5343ea7" width="22%" />
+  <img src="https://github.com/user-attachments/assets/ef58b0d6-58c5-4993-ab04-08f354b7e4d1" width="22%" />
+  <img src="https://github.com/user-attachments/assets/86868119-cf7a-480c-a55f-7461372ed8d2" width="22%" />
+<img src= "https://github.com/user-attachments/assets/9de361d8-bbb0-416a-9552-275e6367b3d9" width="22%">
+
+</p>
+
+
 
 ### 🖼️ **Current: Framer Module**
 The core functionality allows you to select multiple photos and apply consistent Instagram-optimized framing with white, black, or blur backgrounds.
@@ -54,7 +65,7 @@ A planned feature to transform multiple photos into seamless carousel strips tha
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/instaframe.git
+   git clone https://github.com/rishab-ms/instaframe.git
    cd instaframe
    ```
 
@@ -81,17 +92,17 @@ flutter build appbundle --release
 ## 📥 Download & Install
 
 ### Latest Release
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/your-username/instaframe?style=for-the-badge)](https://github.com/your-username/instaframe/releases/latest)
-[![GitHub Release Downloads](https://img.shields.io/github/downloads/your-username/instaframe/total?style=for-the-badge)](https://github.com/your-username/instaframe/releases)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/rishab-ms/instaframe?style=for-the-badge)](https://github.com/rishab-ms/instaframe/releases/latest)
+[![GitHub Release Downloads](https://img.shields.io/github/downloads/rishab-ms/instaframe/total?style=for-the-badge)](https://github.com/rishab-ms/instaframe/releases)
 
 **Download the latest APK:**
-1. Go to [Releases](https://github.com/your-username/instaframe/releases)
+1. Go to [Releases](https://github.com/rishab-ms/instaframe/releases)
 2. Download the latest `InstaFrame-vX.X.X.apk` file
 3. Install on your Android device
 
 ### Installation Instructions
 1. **Enable Unknown Sources**: On Android, go to Settings > Apps > Special access > Install unknown apps
-2. **Download APK**: From the [latest release](https://github.com/your-username/instaframe/releases/latest)
+2. **Download APK**: From the [latest release](https://github.com/rishab-ms/instaframe/releases/latest)
 3. **Install**: Open the downloaded APK file and follow the installation prompts
 4. **Grant Permissions**: Allow camera/gallery access when prompted
 
@@ -119,7 +130,7 @@ git push origin v1.0.0
 # 4. GitHub Actions will automatically create the release
 ```
 
-*Note: Replace `your-username` in URLs with your actual GitHub username*
+*Note: Replace `rishab-ms` in URLs with your actual GitHub username*
 
 ## 🎨 How to Use
 
@@ -185,8 +196,8 @@ We welcome contributions from the community! Here's how you can help:
 
 ### Ways to Contribute
 
-- 🐛 **Bug Reports**: Found a bug? [Open an issue](https://github.com/your-username/instaframe/issues)
-- 💡 **Feature Requests**: Have an idea? [Suggest it](https://github.com/your-username/instaframe/issues)
+- 🐛 **Bug Reports**: Found a bug? [Open an issue](https://github.com/rishab-ms/instaframe/issues)
+- 💡 **Feature Requests**: Have an idea? [Suggest it](https://github.com/rishab-ms/instaframe/issues)
 - 🔧 **Code Contributions**: Fix bugs or add features
 - 📖 **Documentation**: Improve docs or add examples
 - 🧪 **Testing**: Help test on different devices
@@ -260,8 +271,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - 📧 **Email**: rishabms80@gmail.com
-- 🐛 **Issues**: [GitHub Issues](https://github.com/your-username/instaframe/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/your-username/instaframe/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/rishab-ms/instaframe/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/rishab-ms/instaframe/discussions)
 
 ---
 

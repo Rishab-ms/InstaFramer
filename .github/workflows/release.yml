@@ -24,6 +24,15 @@ jobs:
       with:
         flutter-version: '3.24.0'
 
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Accept Android licenses
+      run: yes | sdkmanager --licenses
+
+    - name: Display available Android SDKs
+      run: sdkmanager --list
+
     - name: Install dependencies
       run: flutter pub get
 
