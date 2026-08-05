@@ -64,6 +64,8 @@ class PanoramaEditorScreen extends StatelessWidget {
                 PanoramaTileCountSelector(
                   tileCount: settings.tileCount,
                   maxTiles: state.maxTiles,
+                  sourceAspect: state.sourceAspect,
+                  fitMode: settings.fitMode,
                 ),
                 const SizedBox(height: 16),
                 PanoramaFitModeToggle(fitMode: settings.fitMode),
