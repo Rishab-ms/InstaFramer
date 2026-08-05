@@ -2434,25 +2434,25 @@ listenWhen: (previous, current) =>
 
 **Step 2 — Bloc + editor, preview only** *(export button present but disabled)*
 
-- [ ] Create `lib/widgets/editor/control_button.dart`; delete `_buildControlButton` from `editor_screen.dart` and call the widget
-- [ ] Create `lib/widgets/editor/labeled_slider.dart`; rewrite `_buildScaleSlider` / `_buildBlurIntensitySlider` to use it
-- [ ] Make `EditorAppBar.title` required; update `editor_screen.dart:223` to `EditorAppBar(title: 'Edit Photos')`
-- [ ] 🚦 **GATE** — the framer looks and behaves **identically** after the extraction (pills, sliders, app bar)
-- [ ] Create `lib/blocs/panorama_bloc/panorama_event.dart` — all nine events
-- [ ] Create `lib/blocs/panorama_bloc/panorama_state.dart` — `Initial`, `Ineligible`, `Ready` (leave export states for Step 3)
-- [ ] Create `lib/blocs/panorama_bloc/panorama_bloc.dart` — `_onPanoramaSourceSelected` (uses `orientatedWidth`/`orientatedHeight`) + the five settings handlers
-- [ ] Persist scale/blur to `lastUsedScale` / `lastUsedBlurIntensity` on change, mirroring `PhotoBloc._onUpdateScale`
-- [ ] Register `PanoramaBloc` as the third provider in `main.dart`
-- [ ] Add `PhotoPickerScreen.pickSinglePhoto` — `maxAssets: 1`, **returns** the asset
-- [ ] Add a `BlocListener<PanoramaBloc, PanoramaState>` to `HomeScreen`: push on `PanoramaReadyState`, snackbar on `PanoramaIneligibleState`
-- [ ] Add the `OutlinedButton.icon('Panorama Carousel')` and swap one `_FeatureItem`
-- [ ] Create `lib/widgets/panorama/panorama_seam_overlay.dart` — `Row` of `Expanded`, borders + tile numbers
-- [ ] Create `lib/widgets/panorama/panorama_preview.dart` — `AspectRatio(canvasRatio)` + `Stack(background, photo)` + overlay; Fit uses `Transform.scale` + `BoxFit.contain`, Fill uses `BoxFit.cover`; both apply `Transform.translate` for `seamOffset`
-- [ ] Create `lib/widgets/panorama/panorama_tile_count_selector.dart` — pill row + canvas-ratio hint + consequence line
-- [ ] Create `lib/widgets/panorama/panorama_fit_mode_toggle.dart` — `SegmentedButton<PanoramaFitMode>`
-- [ ] Create `lib/screens/panorama_editor_screen.dart` — app bar, preview, controls in a **scroll view**, disabled export button; background/scale/blur absent in Fill
-- [ ] 🚦 **GATE** — wide photo → live preview with seam guides; tile count, Fit/Fill, scale and seam-nudge all reflow correctly. Portrait photo → snackbar on Home, **no navigation**
-- [ ] `flutter analyze` clean + commit
+- [x] Create `lib/widgets/editor/control_button.dart`; delete `_buildControlButton` from `editor_screen.dart` and call the widget
+- [x] Create `lib/widgets/editor/labeled_slider.dart`; rewrite `_buildScaleSlider` / `_buildBlurIntensitySlider` to use it
+- [x] Make `EditorAppBar.title` required; update `editor_screen.dart:223` to `EditorAppBar(title: 'Edit Photos')`
+- [x] 🚦 **GATE** — the framer looks and behaves **identically** after the extraction (pills, sliders, app bar). Verified on an Android emulator: aspect-ratio pills, background pills, and both sliders render and read (92% scale, etc.) exactly as before.
+- [x] Create `lib/blocs/panorama_bloc/panorama_event.dart` — all nine events. **Deviation:** also added `UpdatePanoramaSeamOffsetEvent` — the plan's Architecture section lists nine events but omits one for the seam-nudge slider, even though Product Decision 3 ("Seam-nudge IS in V1") and this step's own gate ("seam-nudge all reflow correctly") require it to be interactive already. Treated as a documentation gap rather than deferring the slider to Step 5.
+- [x] Create `lib/blocs/panorama_bloc/panorama_state.dart` — `Initial`, `Ineligible`, `Ready` (leave export states for Step 3)
+- [x] Create `lib/blocs/panorama_bloc/panorama_bloc.dart` — `_onPanoramaSourceSelected` (uses `orientatedWidth`/`orientatedHeight`) + the five settings handlers (plus the seam-offset handler above, which sets `seamOffsetIsManual: true`)
+- [x] Persist scale/blur to `lastUsedScale` / `lastUsedBlurIntensity` on change, mirroring `PhotoBloc._onUpdateScale`
+- [x] Register `PanoramaBloc` as the third provider in `main.dart`
+- [x] Add `PhotoPickerScreen.pickSinglePhoto` — `maxAssets: 1`, **returns** the asset
+- [x] Add a `BlocListener<PanoramaBloc, PanoramaState>` to `HomeScreen`: push on `PanoramaReadyState`, snackbar on `PanoramaIneligibleState`
+- [x] Add the `OutlinedButton.icon('Panorama Carousel')` and swap one `_FeatureItem`
+- [x] Create `lib/widgets/panorama/panorama_seam_overlay.dart` — `Row` of `Expanded`, borders + tile numbers
+- [x] Create `lib/widgets/panorama/panorama_preview.dart` — `AspectRatio(canvasRatio)` + `Stack(background, photo)` + overlay; Fit uses `Transform.scale` + `BoxFit.contain`, Fill uses `BoxFit.cover`; both apply `Transform.translate` for `seamOffset`
+- [x] Create `lib/widgets/panorama/panorama_tile_count_selector.dart` — pill row + canvas-ratio hint + consequence line
+- [x] Create `lib/widgets/panorama/panorama_fit_mode_toggle.dart` — `SegmentedButton<PanoramaFitMode>`
+- [x] Create `lib/screens/panorama_editor_screen.dart` — app bar, preview, controls in a **scroll view**, disabled export button; background/scale/blur absent in Fill
+- [ ] 🚦 **GATE** — wide photo → live preview with seam guides; tile count, Fit/Fill, scale and seam-nudge all reflow correctly. Portrait photo → snackbar on Home, **no navigation**. *(Not yet run end-to-end on device/emulator with a real wide photo — flag for follow-up before Step 3.)*
+- [x] `flutter analyze` clean + commit
 
 **Step 3 — Export**
 
