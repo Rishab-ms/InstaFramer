@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'blocs/panorama_bloc/panorama_bloc.dart';
 import 'blocs/photo_bloc/photo_bloc.dart';
 import 'blocs/preferences_bloc/preferences_bloc.dart';
 import 'blocs/preferences_bloc/preferences_event.dart';
@@ -10,7 +11,7 @@ import 'services/preferences_service.dart';
 import 'theme/app_theme.dart';
 
 /// Entry point of the InstaFramer application.
-/// 
+///
 /// This app helps users frame photos perfectly for Instagram with:
 /// - Customizable aspect ratios (4:5 portrait, 1:1 square)
 /// - Adjustable scaling and positioning
@@ -23,7 +24,7 @@ void main() async {
 }
 
 /// Root widget of the InstaFramer application.
-/// 
+///
 /// Sets up the BLoC architecture with:
 /// - [PreferencesBloc]: Manages user settings (theme, quality, size)
 /// - [PhotoBloc]: Manages photo selection and editing workflow
@@ -36,13 +37,20 @@ class InstaFramerApp extends StatelessWidget {
       providers: [
         // Preferences BLoC - loads user settings on app start
         BlocProvider<PreferencesBloc>(
-          create: (context) => PreferencesBloc(
-            preferencesService: PreferencesService(),
-          )..add(LoadPreferencesEvent()), // Load preferences immediately
+          create: (context) =>
+              PreferencesBloc(preferencesService: PreferencesService())
+                ..add(LoadPreferencesEvent()), // Load preferences immediately
         ),
         // Photo BLoC - manages photo selection and editing workflow
         BlocProvider<PhotoBloc>(
           create: (context) => PhotoBloc(
+            exportService: ExportService(),
+            preferencesService: PreferencesService(),
+          ),
+        ),
+        // Panorama BLoC - manages panorama-carousel selection and editing
+        BlocProvider<PanoramaBloc>(
+          create: (context) => PanoramaBloc(
             exportService: ExportService(),
             preferencesService: PreferencesService(),
           ),
@@ -53,7 +61,7 @@ class InstaFramerApp extends StatelessWidget {
           // Default to system theme mode while preferences are loading
           // This prevents a flash of incorrect theme on app start
           ThemeMode themeMode = ThemeMode.system;
-          
+
           if (state is PreferencesLoadedState) {
             themeMode = state.preferences.themeMode;
           }

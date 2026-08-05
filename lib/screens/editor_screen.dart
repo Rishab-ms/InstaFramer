@@ -131,7 +131,7 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (context, state) {
         // Handle different states
         if (state is PhotosProcessingState) {
-          return _buildProcessingView(state,);
+          return _buildProcessingView(state);
         }
 
         if (state is PhotosLoadedState) {
@@ -453,14 +453,11 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   /// Build processing view during export.
-  Widget _buildProcessingView(
-    PhotosProcessingState state,
-    
-  ) {
+  Widget _buildProcessingView(PhotosProcessingState state) {
     final theme = Theme.of(context);
     // Calculate which photo to show (safe clamp)
-  final photoIndex = state.current.clamp(0, state.photos.length - 1);
-  final currentPhoto = state.photos[photoIndex];
+    final photoIndex = state.current.clamp(0, state.photos.length - 1);
+    final currentPhoto = state.photos[photoIndex];
     return PopScope(
       canPop: false,
       child: Scaffold(
