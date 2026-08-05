@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'aspect_ratio.dart';
-import 'background_type.dart';
+import 'enums.dart';
 import 'image_size.dart';
 
 /// Photo processing settings for framing and export.

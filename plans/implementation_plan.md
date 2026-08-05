@@ -1964,6 +1964,8 @@ This slightly changes existing framer blur output — for the better, and it mak
 
 **File Modified: `lib/services/export_service.dart`** — a new method. **`exportPhotos` is unchanged.** Different input, output cardinality, concurrency, naming and metadata policy; folding both into one method means four boolean flags, which is the config-knob indirection the Development Rules forbid.
 
+`PanoramaExportPhase` goes in **`lib/models/enums.dart`** (see the Step 1 convention note), not declared inline in `export_service.dart`:
+
 ```dart
 enum PanoramaExportPhase { rendering, saving }
 class PanoramaExportProgress { final PanoramaExportPhase phase; final int saved, total; }
@@ -2419,14 +2421,14 @@ listenWhen: (previous, current) =>
 
 **Step 1 — Processing core**
 
-- [ ] Create `lib/models/panorama_spec.dart` — constants, `PanoramaEligibility`, `evaluate()` with the three ordered checks and their reason strings
-- [ ] Create `lib/models/panorama_settings.dart` — `PanoramaFitMode`, `PanoramaSettings` with `seamOffset` / `seamOffsetIsManual`, the four canvas getters, `seamOffsetPx`, `copyWith`
-- [ ] Add `_coverCropResize(src, targetW, targetH, {required int offsetX})` to `image_processor.dart`
-- [ ] Change `_generateFastBlurBackground` step 3 from `copyResize` to `_coverCropResize(..., offsetX: 0)` — the stretch→cover fix
-- [ ] Add required `offsetX` to `_overlayScaledImage`; update the framer call site in `_processImageInIsolate` to pass `0`
-- [ ] Add `_PanoramaProcessingParams` (serializable data only)
-- [ ] Add `_processPanoramaInIsolate` — decode → guarded `bakeOrientation` → Fit/Fill branch → slice loop
-- [ ] Add public `processPanorama(Uint8List, PanoramaSettings)`
+- [x] Create `lib/models/panorama_spec.dart` — constants, `PanoramaEligibility`, `evaluate()` with the three ordered checks and their reason strings
+- [x] Create `lib/models/panorama_settings.dart` — `PanoramaSettings` with `seamOffset` / `seamOffsetIsManual`, the four canvas getters, `seamOffsetPx`, `copyWith`. **Convention change made during this step:** all enums in the app (including `PanoramaFitMode`) now live in `lib/models/enums.dart` using Dart's enhanced-enum syntax (fields + const constructor) instead of a bare `enum` plus a same-file `extension … on … { displayName }` — this folded in the pre-existing `BackgroundType` and `ImageSizePreset`, both moved out of `background_type.dart`/`image_size.dart` into `enums.dart`. `background_type.dart` no longer exists. Apply this to `PanoramaExportPhase` (Step 3) and any other enum introduced later.
+- [x] Add `_coverCropResize(src, targetW, targetH, {required int offsetX})` to `image_processor.dart`
+- [x] Change `_generateFastBlurBackground` step 3 from `copyResize` to `_coverCropResize(..., offsetX: 0)` — the stretch→cover fix
+- [x] Add required `offsetX` to `_overlayScaledImage`; update the framer call site in `_processImageInIsolate` to pass `0`
+- [x] Add `_PanoramaProcessingParams` (serializable data only)
+- [x] Add `_processPanoramaInIsolate` — decode → guarded `bakeOrientation` → Fit/Fill branch → slice loop
+- [x] Add public `processPanorama(Uint8List, PanoramaSettings)`
 - [ ] 🚦 **GATE** — the blur fix is live in the **existing** framer: export a photo with a Blur background at 16:9 and confirm the background covers instead of smearing
 - [ ] `flutter analyze` clean + commit
 

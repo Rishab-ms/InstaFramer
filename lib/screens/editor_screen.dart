@@ -7,7 +7,7 @@ import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_event.dart';
 import '../blocs/photo_bloc/photo_state.dart';
 import '../models/aspect_ratio.dart' as models;
-import '../models/background_type.dart';
+import '../models/enums.dart';
 import '../services/image_processor.dart';
 import '../widgets/editor/editor_app_bar.dart';
 import '../widgets/editor/export_button.dart';

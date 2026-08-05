@@ -2,10 +2,23 @@ import 'package:flutter/foundation.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:image/image.dart' as img;
 import '../models/photo_settings.dart';
-import '../models/background_type.dart';
+import '../models/enums.dart';
+import '../models/panorama_settings.dart';
 
 /// Image processor that uses isolates for off-main-thread processing.
 class ImageProcessor {
+  /// JPEG quality bounds applied to every export path. Below the floor,
+  /// artefacts show on skies and gradients; above the ceiling, file size grows
+  /// with no visible gain.
+  static const int _minExportQuality = 70;
+  static const int _maxExportQuality = 95;
+
+  /// Previews are throwaway and never leave the device.
+  static const int _previewQuality = 75;
+
+  static int _clampExportQuality(int quality) =>
+      quality.clamp(_minExportQuality, _maxExportQuality);
+
   /// Process a single image with the given settings.
   ///
   /// accepts [imageBytes] directly to avoid double-loading data during export.
@@ -37,6 +50,88 @@ class ImageProcessor {
     );
   }
 
+  /// Renders [sourceBytes] into an N x 0.8 canvas and slices it into
+  /// `settings.tileCount` equal-width 4:5 tiles, in left-to-right order.
+  ///
+  /// One isolate call, not N: decode, blur background and cubic resize are
+  /// canvas-global and account for over 90% of the cost, so slicing per tile
+  /// would redo them N times and re-ship the full source bytes across the
+  /// isolate boundary N times. `PanoramaSpec.maxTilesCap` is what bounds the
+  /// canvas memory this holds.
+  Future<List<Uint8List>> processPanorama(
+    Uint8List sourceBytes,
+    PanoramaSettings settings,
+  ) {
+    return compute(
+      _processPanoramaInIsolate,
+      _PanoramaProcessingParams(sourceBytes: sourceBytes, settings: settings),
+    );
+  }
+
+  static List<Uint8List> _processPanoramaInIsolate(
+    _PanoramaProcessingParams params,
+  ) {
+    final settings = params.settings;
+
+    // 1. Decode
+    img.Image? source = img.decodeImage(params.sourceBytes);
+    if (source == null) throw Exception('Failed to decode image');
+
+    // 2. Bake EXIF rotation, guarded — bakeOrientation does an unconditional
+    // full-image copy before checking whether there is anything to do, which is
+    // tens of megabytes wasted on a large source.
+    if (source.exif.imageIfd.hasOrientation &&
+        source.exif.imageIfd.orientation != 1) {
+      source = img.bakeOrientation(source);
+    }
+
+    final targetSize = _Size(settings.canvasWidth, settings.canvasHeight);
+
+    // 3. Render the full canvas
+    final img.Image canvas;
+    switch (settings.fitMode) {
+      case PanoramaFitMode.fill:
+        canvas = _coverCropResize(
+          source,
+          targetSize.width,
+          targetSize.height,
+          offsetX: settings.seamOffsetPx,
+          interpolation: img.Interpolation.cubic, // this is the photo itself
+        );
+      case PanoramaFitMode.fit:
+        canvas = _createCanvasWithBackground(
+          source,
+          settings.backgroundType,
+          targetSize,
+          settings.blurIntensity,
+        );
+        _overlayScaledImage(
+          canvas,
+          source,
+          settings.scale,
+          targetSize,
+          offsetX: settings.seamOffsetPx,
+        );
+    }
+
+    // 4. Slice into tiles. canvasWidth is an exact multiple of tileWidth, so
+    // the columns tile the canvas with zero overlap and zero gap.
+    final quality = _clampExportQuality(settings.imageQuality);
+    final tiles = <Uint8List>[];
+    for (var i = 0; i < settings.tileCount; i++) {
+      final tile = img.copyCrop(
+        canvas,
+        x: i * settings.tileWidth,
+        y: 0,
+        width: settings.tileWidth,
+        height: settings.tileHeight,
+      );
+      tiles.add(Uint8List.fromList(img.encodeJpg(tile, quality: quality)));
+    }
+
+    return tiles;
+  }
+
   static Uint8List _processImageInIsolate(_ImageProcessingParams params) {
     // 1. Decode image
     final originalImage = img.decodeImage(params.imageBytes);
@@ -61,6 +156,7 @@ class ImageProcessor {
       originalImage,
       params.settings.scale,
       targetSize,
+      offsetX: 0, // the framer has no seam concept
     );
 
     // 5. Encode
@@ -143,29 +239,87 @@ class ImageProcessor {
       lowRes = img.gaussianBlur(lowRes, radius: sigma.toInt());
     }
 
-    // 3. Upscale to fill target
-    // 'cover' logic: crop to fill
-    return img.copyResize(
+    // 3. Cover the target: centre-crop to the target aspect, then upscale.
+    // A plain resize here would stretch rather than cover — imperceptible on a
+    // 4:5 canvas, but a visible horizontal smear on a 3.2:1 panorama canvas.
+    // The background stays centred while the photo slides, so offsetX is 0.
+    return _coverCropResize(
       lowRes,
-      width: targetSize.width,
-      height: targetSize.height,
-      interpolation:
-          img.Interpolation.linear, // Smooths out the upscaling pixels
+      targetSize.width,
+      targetSize.height,
+      offsetX: 0,
+      interpolation: img.Interpolation.linear, // source is already blurred
+    );
+  }
+
+  /// Centre-crops [src] to the target aspect, then resizes to exactly
+  /// [targetW]x[targetH] — 'cover' semantics, no stretching.
+  ///
+  /// [offsetX] is a horizontal shift in **target** pixels; it is converted to
+  /// source pixels and applied to the crop window. [interpolation] is the
+  /// caller's quality/speed call — cubic for the photo itself, linear for an
+  /// already-blurred background where the extra taps buy nothing. Both are
+  /// required rather than defaulted so every call site states its intent.
+  static img.Image _coverCropResize(
+    img.Image src,
+    int targetW,
+    int targetH, {
+    required int offsetX,
+    required img.Interpolation interpolation,
+  }) {
+    final srcAspect = src.width / src.height;
+    final dstAspect = targetW / targetH;
+
+    final int cropW, cropH;
+    if (srcAspect > dstAspect) {
+      // Source is wider than the target → crop the sides
+      cropH = src.height;
+      cropW = (src.height * dstAspect).round();
+    } else {
+      // Source is taller than the target → crop top and bottom
+      cropW = src.width;
+      cropH = (src.width / dstAspect).round();
+    }
+
+    // Clamping matters: an unclamped window at an extreme offset would run past
+    // the source edge and copyCrop would silently return a smaller image,
+    // breaking the exact-multiple tiling.
+    final scaledOffset = (offsetX * cropW / targetW).round();
+    final cropX = ((src.width - cropW) ~/ 2 + scaledOffset)
+        .clamp(0, src.width - cropW);
+
+    final cropped = img.copyCrop(
+      src,
+      x: cropX,
+      y: (src.height - cropH) ~/ 2,
+      width: cropW,
+      height: cropH,
+    );
+
+    return img.copyResize(
+      cropped,
+      width: targetW,
+      height: targetH,
+      interpolation: interpolation,
     );
   }
 
   static int _calculateOptimalQuality(_ImageProcessingParams params) {
-    if (params.isPreview) return 75;
-    // For export, keep high quality but avoid 100 which is wasteful
-    return params.settings.imageQuality.clamp(70, 95);
+    if (params.isPreview) return _previewQuality;
+    return _clampExportQuality(params.settings.imageQuality);
   }
 
+  /// Composites [original] contain-fitted and scaled onto [canvas].
+  ///
+  /// [offsetX] shifts the photo horizontally from centre, in canvas pixels.
+  /// Required rather than defaulted so every call site states its intent.
   static void _overlayScaledImage(
     img.Image canvas,
     img.Image original,
     double scale,
-    _Size targetSize,
-  ) {
+    _Size targetSize, {
+    required int offsetX,
+  }) {
     // Calculate fit dimensions
     final originalAspect = original.width / original.height;
     final targetAspect = targetSize.width / targetSize.height;
@@ -188,8 +342,13 @@ class ImageProcessor {
       interpolation: img.Interpolation.cubic, // Better quality for main image
     );
 
-    // Center it
-    final x = (targetSize.width - w) ~/ 2;
+    // Center it, then apply the horizontal nudge — bounded by the slack
+    // between the photo and the canvas edge. Fit mode's contract is that
+    // nothing is cropped away, so the photo may slide within the bars but
+    // never past them; at scale 1.0 there is no slack and the nudge is
+    // correctly a no-op.
+    final slack = (targetSize.width - w) ~/ 2;
+    final x = slack + offsetX.clamp(-slack, slack);
     final y = (targetSize.height - h) ~/ 2;
 
     img.compositeImage(canvas, resized, dstX: x, dstY: y);
@@ -212,5 +371,15 @@ class _ImageProcessingParams {
     required this.settings,
     required this.isPreview,
     required this.isExportProcessing,
+  });
+}
+
+class _PanoramaProcessingParams {
+  final Uint8List sourceBytes;
+  final PanoramaSettings settings;
+
+  _PanoramaProcessingParams({
+    required this.sourceBytes,
+    required this.settings,
   });
 }

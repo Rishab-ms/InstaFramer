@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:photo_manager/photo_manager.dart';
-import '../../models/background_type.dart';
+import '../../models/enums.dart';
 import '../../models/photo_settings.dart';
 
 /// Base class for all photo-related states.

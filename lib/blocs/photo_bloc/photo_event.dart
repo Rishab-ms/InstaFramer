@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../../models/photo_settings.dart';
 import '../../models/aspect_ratio.dart';
-import '../../models/background_type.dart';
+import '../../models/enums.dart';
 
 /// Base class for all photo-related events.
 ///

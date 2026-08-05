@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/preferences_bloc/preferences_bloc.dart';
 import '../blocs/preferences_bloc/preferences_state.dart';
-import '../models/image_size.dart';
+import '../models/enums.dart';
 import '../services/feedback_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/preferences/app_info_footer.dart';

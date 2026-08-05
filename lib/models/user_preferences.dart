@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'enums.dart';
 import 'image_size.dart';
 
 /// User preferences persisted across app sessions.

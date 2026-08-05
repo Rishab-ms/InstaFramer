@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import '../../models/enums.dart';
 import '../../models/image_size.dart';
 
 /// Base class for all preferences-related events.

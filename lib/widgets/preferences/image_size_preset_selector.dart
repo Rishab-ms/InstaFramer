@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/preferences_bloc/preferences_bloc.dart';
 import '../../blocs/preferences_bloc/preferences_event.dart';
-import '../../models/image_size.dart';
+import '../../models/enums.dart';
 import 'settings_card.dart';
 
 /// Image size preset selector with radio buttons.
