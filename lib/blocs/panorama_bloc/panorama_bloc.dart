@@ -13,6 +13,10 @@ import 'panorama_state.dart';
 /// [ExportService] and [PreferencesService] with the framer, but owns no
 /// mutable state in common with it.
 class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
+  // Unused for now — export wiring (`ExportPanoramaEvent` /
+  // `_onExportPanorama`) lands in Step 3 and will call
+  // `_exportService.exportPanorama(...)`. Kept as a constructor param already
+  // so Step 3 doesn't have to change main.dart's provider wiring again.
   // ignore: unused_field
   final ExportService _exportService;
   final PreferencesService _preferencesService;
@@ -75,6 +79,12 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
       ),
     );
   }
+
+  // The five settings handlers below all guard on `state is
+  // PanoramaReadyState` and no-op otherwise — mirrors PhotoBloc's handlers.
+  // These events can only be dispatched from PanoramaEditorScreen, which is
+  // only reachable once the bloc is already in PanoramaReadyState, so the
+  // guard is a defensive no-op in practice, not a reachable branch.
 
   Future<void> _onUpdateTileCount(
     UpdateTileCountEvent event,

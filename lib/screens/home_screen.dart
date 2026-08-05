@@ -43,15 +43,30 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
+      // Home listens to two independent blocs (PhotoBloc for the framer,
+      // PanoramaBloc for the carousel flow), so a single BlocConsumer can't
+      // cover both — MultiBlocListener composes the PanoramaBloc listener
+      // alongside the existing PhotoBloc BlocConsumer without nesting one
+      // builder inside another's listener. Only PhotoBloc drives this
+      // screen's *builder* (the panorama flow has no Home-visible UI state,
+      // just a one-shot navigate-or-snackbar reaction to source selection),
+      // so PanoramaBloc only needs a listener, not a consumer.
       body: MultiBlocListener(
         listeners: [
           BlocListener<PanoramaBloc, PanoramaState>(
+            // Mirrors PhotoBloc's listenWhen pattern below: react only on
+            // the transition INTO Ready (not on every rebuild while already
+            // ready), plus unconditionally on Ineligible since that's always
+            // a fresh pick attempt to react to.
             listenWhen: (previous, current) =>
                 (previous is! PanoramaReadyState &&
                     current is PanoramaReadyState) ||
                 current is PanoramaIneligibleState,
             listener: (context, state) {
               if (state is PanoramaReadyState) {
+                // Push only here, per Flow A in the panorama plan — pushing
+                // PanoramaEditorScreen for an ineligible source would land
+                // the user on a screen whose only content is "no".
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -59,6 +74,8 @@ class HomeScreen extends StatelessWidget {
                   ),
                 );
               } else if (state is PanoramaIneligibleState) {
+                // Stay on Home; the picker is one tap away via the same
+                // button rather than forcing a back-navigation.
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(state.reason),
@@ -192,9 +209,19 @@ class HomeScreen extends StatelessWidget {
                     // into N tiles of 4:5 for an Instagram carousel.
                     OutlinedButton.icon(
                       onPressed: () async {
+                        // pickSinglePhoto (unlike pickPhotos) returns the
+                        // asset directly rather than dispatching to a bloc
+                        // itself — this callsite decides where it goes,
+                        // which is what lets one picker method serve both
+                        // the framer (PhotoBloc) and panorama (PanoramaBloc)
+                        // entry points.
                         final asset = await PhotoPickerScreen.pickSinglePhoto(
                           context,
                         );
+                        // context.mounted check is required: pickSinglePhoto
+                        // awaits the picker route, so Home may have been
+                        // popped in the meantime (e.g. user backgrounds the
+                        // app and it gets torn down) by the time it resolves.
                         if (asset == null || !context.mounted) return;
                         context.read<PanoramaBloc>().add(
                           PanoramaSourceSelectedEvent(asset),

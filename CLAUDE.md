@@ -23,6 +23,10 @@ There is no single-test-file convention yet since the project has no `test/` dir
 
 `./scripts/create_release.sh <version>` builds a release APK, renames it, tags it, and pushes the tag. Pushing a `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which builds the APK on GitHub Actions and attaches it to a GitHub Release. Don't push version tags without the user's explicit go-ahead — it triggers a public release.
 
+## Git workflow
+
+- **No auto-commits.** Do not run `git commit` after finishing a chunk of work on your own initiative. Stop, present the diff, and wait for the user to review it and give an explicit go-ahead. The user routinely spots gaps, flaws, or improvements in a diff before it's committed — committing preemptively forecloses that review. This applies even when earlier turns in the same session established a pattern of committing at each step; each commit needs its own go-ahead, not an inherited one.
+
 ## Engineering Principles
 
 - Do not preserve backward compatibility for internal code. Remove obsolete paths instead of adding compatibility layers, fallbacks, or migrations.

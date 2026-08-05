@@ -32,6 +32,14 @@ class PanoramaTileCountSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final canvasRatio = PanoramaSpec.canvasRatio(tileCount);
+    // Which dimension has to give depends only on which shape is wider —
+    // this sign flip is the entire decision. Matches the 2x2 table in the
+    // panorama plan's "UI" section:
+    //   Fill, canvas wider than photo  -> top/bottom cropped (photo's tall
+    //                                     edges get cut to cover the width)
+    //   Fill, canvas narrower          -> sides cropped
+    //   Fit,  canvas wider than photo  -> bars left/right (photo pillarboxed)
+    //   Fit,  canvas narrower          -> bars above/below (letterboxed)
     final isCanvasWider = canvasRatio > sourceAspect;
 
     final consequence = fitMode == PanoramaFitMode.fill
