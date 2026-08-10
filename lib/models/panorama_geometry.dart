@@ -9,7 +9,7 @@ import 'enums.dart';
 /// [PanoramaSpec.emptyTiles] needs it to find blank tiles, `PanoramaCanvas`
 /// needs it to composite the live preview, and the editor needs it to bound
 /// the seam slider. Those all carried independent copies of the same fit/fill
-/// maths — which is exactly how a preview drifts out of sync with its export.
+/// maths, which is exactly how a preview drifts out of sync with its export.
 ///
 /// Positions are fractions, never pixels: **canvas fractions** run 0..1
 /// left-to-right across the whole canvas, **source fractions** 0..1 across the
@@ -28,16 +28,16 @@ class PanoramaGeometry {
   final PanoramaFitMode fitMode;
   final int tileCount;
 
-  /// The nudge that is actually applied, in tile widths — the requested offset
+  /// The nudge that is actually applied, in tile widths. The requested offset
   /// clamped to ±[maxCropOffsetX]. `ImageProcessor` clamps the same way in
   /// pixels; exposing the clamped value is what lets the UI stop showing a
   /// slider position the render will never honour.
   final double cropOffsetX;
 
   /// Largest nudge with any visible effect, in tile widths. Zero when the
-  /// photo already spans the canvas width — Fit at full zoom on a source at
+  /// photo already spans the canvas width. Fit at full zoom on a source at
   /// least as wide as the canvas, or Fill of a source no wider than the
-  /// canvas — because there is nowhere left to slide.
+  /// canvas, because there is nowhere left to slide.
   final double maxCropOffsetX;
 
   /// Canvas fraction of the photo's left and right edges. Fill always covers
@@ -59,8 +59,8 @@ class PanoramaGeometry {
   final double cropOffsetY;
   final double maxCropOffsetY;
 
-  /// Source fraction of the visible crop window's top edge and its height —
-  /// the vertical counterparts of [cropStart] and [cropWidth]. Fit keeps the
+  /// Source fraction of the visible crop window's top edge and its height.
+  /// The vertical counterparts of [cropStart] and [cropWidth]. Fit keeps the
   /// whole source, so they are 0 and 1 there.
   final double cropTop;
   final double cropHeight;
@@ -95,7 +95,7 @@ class PanoramaGeometry {
   }) {
     switch (fitMode) {
       case PanoramaFitMode.fit:
-        // Contain-fit at `scale`, centred, nudged within the bars — this is
+        // Contain-fit at `scale`, centred, nudged within the bars. This is
         // `_overlayScaledImage`'s geometry expressed as fractions.
         final photoSpan = scale * math.min(1.0, sourceAspect / canvasRatio);
         final maxOffsetFrac = _cappedOffsetFrac(
@@ -115,7 +115,7 @@ class PanoramaGeometry {
           photoEnd: 0.5 + photoSpan / 2 + offsetFrac,
           cropStart: 0,
           cropWidth: 1,
-          // Fit is vertically centred, always — see [cropOffsetY].
+          // Fit is vertically centred, always. See [cropOffsetY].
           cropOffsetY: 0,
           maxCropOffsetY: 0,
           cropTop: 0,
@@ -123,7 +123,7 @@ class PanoramaGeometry {
         );
 
       case PanoramaFitMode.fill:
-        // Cover-fit + crop — `_coverCropResize`'s geometry. When the canvas is
+        // Cover-fit + crop, `_coverCropResize`'s geometry. When the canvas is
         // wider-aspect than the source (the common panorama case: canvasRatio
         // grows with tileCount, sourceAspect doesn't) the crop keeps the full
         // source width, so there is no horizontal travel at all.
@@ -143,7 +143,7 @@ class PanoramaGeometry {
 
         // Vertical is the same derivation on the other axis. The canvas is
         // one tile tall, so a nudge in canvas heights needs no tile-count
-        // division — that division exists on X only to keep a given slider
+        // division. That division exists on X only to keep a given slider
         // position meaning the same thing at every tile count.
         final cropHeight = math.min(1.0, sourceAspect / canvasRatio);
         final cropSlackY = 1.0 - cropHeight;
@@ -176,7 +176,7 @@ class PanoramaGeometry {
 
   /// Maps a canvas-fraction position into a source-fraction position.
   ///
-  /// Returns null when the position falls in Fit's letterbox bars — there is
+  /// Returns null when the position falls in Fit's letterbox bars. There is
   /// no source content there at all.
   double? canvasToSource(double canvasFrac) {
     if (canvasFrac < photoStart || canvasFrac > photoEnd) return null;
@@ -196,7 +196,7 @@ class PanoramaGeometry {
   /// Falls out of the crop arithmetic: putting source fraction 1/3 at canvas
   /// fraction 1/3 needs `cropTop == cropSlackY / 3`, and since
   /// `cropTop == cropSlackY / 2 - offset * cropHeight`, that is
-  /// `offset == cropSlackY / (6 * cropHeight)` — exactly a third of the
+  /// `offset == cropSlackY / (6 * cropHeight)`: exactly a third of the
   /// available travel whenever [maxNudge] isn't capping it, and correctly
   /// less than that when it is.
   double get thirdsCropOffsetY {
@@ -214,7 +214,7 @@ class PanoramaGeometry {
     return (overlap * tileCount).clamp(0.0, 1.0);
   }
 
-  /// 1-indexed tiles the photo barely reaches — slides that would read as
+  /// 1-indexed tiles the photo barely reaches. Slides that would read as
   /// blank background in the carousel. See Smart Defaults B in the plan.
   List<int> emptyTiles({double threshold = 0.5}) {
     final empty = <int>[];
@@ -224,7 +224,7 @@ class PanoramaGeometry {
     return empty;
   }
 
-  /// Coverage of the least-covered tile — how blank the emptiest slide is.
+  /// Coverage of the least-covered tile. How blank the emptiest slide is.
   ///
   /// The measure to compare framings by, where [emptyTiles] only counts them:
   /// two half-covered tiles and one full plus one blank both report "some

@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Visual seam guides over the panorama canvas — a dashed "cut here" line
+/// Visual seam guides over the panorama canvas. A dashed "cut here" line
 /// at each interior tile boundary.
 ///
 /// Pixel-accurate regardless of fit mode: the tiles are exact equal
@@ -12,7 +12,7 @@ class PanoramaSeamOverlay extends StatelessWidget {
   final int tileCount;
 
   /// Complements the actual background choice (white/black/blur) so the
-  /// seam is legible without needing its own backdrop — see
+  /// seam is legible without needing its own backdrop. See
   /// `PanoramaPreview._seamColor`.
   final Color seamColor;
 
@@ -25,7 +25,7 @@ class PanoramaSeamOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // This overlay sits on top of the photo in the preview Stack purely to
-    // be seen — it must not intercept taps/drags meant for whatever's
+    // be seen. It must not intercept taps/drags meant for whatever's
     // beneath it (e.g. a future pan/zoom gesture on the photo).
     return IgnorePointer(
       child: LayoutBuilder(
@@ -39,7 +39,7 @@ class PanoramaSeamOverlay extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // Interior seams only — the canvas's own outer edge isn't a
+              // Interior seams only. The canvas's own outer edge isn't a
               // seam Instagram will ever show stitched.
               for (var i = 1; i < tileCount; i++)
                 Positioned(
@@ -61,7 +61,7 @@ class PanoramaSeamOverlay extends StatelessWidget {
 }
 
 /// One dashed vertical seam line, tinted to complement the actual
-/// background (see [PanoramaSeamOverlay]) — no backdrop of its own, just a
+/// background (see [PanoramaSeamOverlay]), no backdrop of its own, just a
 /// color chosen to read against what's underneath.
 class _DashedSeam extends StatelessWidget {
   static const double width = 20;
@@ -84,7 +84,7 @@ class _DashedSeam extends StatelessWidget {
 
 /// Paints a short-dash vertical line centred in its box. A `Border` can't
 /// draw dashes, so this is the minimal amount of custom painting needed for
-/// the "cut here" line — dash/gap sizes are cosmetic and safe to retune.
+/// the "cut here" line. Dash/gap sizes are cosmetic and safe to retune.
 class _DashedLinePainter extends CustomPainter {
   static const _dashHeight = 4.0;
   static const _dashGap = 4.0;

@@ -11,19 +11,19 @@ class LabeledSlider extends StatelessWidget {
   final double max;
 
   /// Null makes the track continuous. The app's sliders are stepped by
-  /// default — discrete stops read as deliberate settings — but a control
+  /// default. Discrete stops read as deliberate settings, but a control
   /// with magnetic snap points needs free movement between them, or the steps
   /// and the snap fight each other.
   final int? divisions;
   final String valueLabel;
 
-  /// Null renders the slider disabled — for controls that exist but have no
+  /// Null renders the slider disabled, for controls that exist but have no
   /// range to move through under the current settings, where hiding the
   /// control would just make it look like a feature had vanished.
   final ValueChanged<double>? onChanged;
   final ValueChanged<double>? onChangeEnd;
 
-  /// Fires when a drag begins — for transient affordances that should only be
+  /// Fires when a drag begins, for transient affordances that should only be
   /// on screen while the user is actually adjusting something.
   final ValueChanged<double>? onChangeStart;
 
@@ -51,7 +51,7 @@ class LabeledSlider extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           // The default M3 track only shows gaps/tick marks once each
-          // division is wide enough — with the division counts these
+          // division is wide enough, with the division counts these
           // sliders use, that default reads as one continuous track. A
           // slightly smaller tick radius lowers that width threshold so the
           // discrete stops are reliably visible instead of "clean".

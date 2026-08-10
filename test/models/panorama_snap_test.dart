@@ -36,7 +36,7 @@ void main() {
   });
 
   test('leaves values between the snap points alone', () {
-    // Magnetic, not stepped — fine placement has to stay possible, or the
+    // Magnetic, not stepped. Fine placement has to stay possible, or the
     // control stops doing what it is told.
     final between = (thirds + maxOffset) / 2;
     expect(snap(between), between);

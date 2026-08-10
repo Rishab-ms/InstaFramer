@@ -266,7 +266,7 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
             ),
 
-            // Panorama discovery path — only when a single wide-enough
+            // Panorama discovery path, only when a single wide-enough
             // photo is loaded, since that's the framer result the banner is
             // steering people away from. Keyed by photo id so a different
             // single photo gets a fresh, un-dismissed banner.

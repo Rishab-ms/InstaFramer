@@ -235,7 +235,7 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
 
     // A fresh single share (no editor session already in flight) that's
     // wide enough for a panorama gets a mode choice instead of landing
-    // straight in the framer — see SharedPhotoModeSelectionState and
+    // straight in the framer. See SharedPhotoModeSelectionState and
     // CreateModeDialog. A second share arriving while an editor is open, or
     // a multi-photo share, always goes straight to the merge below.
     final freshSingle = assets.length == 1 && currentState == null;

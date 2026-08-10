@@ -18,7 +18,7 @@ void main() {
   /// encoded bytes of a tile before and after the nudge. On a solid-colour
   /// source every column is identical, so a horizontal shift produces byte
   /// identical output and the assertions would pass whether or not the offset
-  /// was actually applied — a test that can't fail. A left-to-right gradient
+  /// was actually applied. A test that can't fail. A left-to-right gradient
   /// makes every column distinct, so any real shift changes the tile's pixels
   /// and therefore its bytes.
   ///
@@ -72,7 +72,7 @@ void main() {
             for (final tile in tiles) {
               final decoded = img.decodeImage(tile)!;
               // The canvas width is an exact multiple of tileWidth, so every tile
-              // must come out at full size — a short final tile would mean the
+              // must come out at full size. A short final tile would mean the
               // slice arithmetic drifted.
               expect(decoded.width, 1080, reason: '$fitMode / $background');
               expect(decoded.height, 1350, reason: '$fitMode / $background');
@@ -147,7 +147,7 @@ void main() {
         expect(wide4, isNot(equals(wide0)));
 
         // The nudge must not shrink the last tile by running the crop window off
-        // the source edge — that is what the clamp in _coverCropResize prevents.
+        // the source edge. That is what the clamp in _coverCropResize prevents.
         expect(img.decodeImage(wide4.last)!.width, 1080);
       },
       timeout: const Timeout(Duration(minutes: 5)),
@@ -157,7 +157,7 @@ void main() {
   test(
     'Fill nudges the crop vertically only when top/bottom are cropped',
     () async {
-      /// Top-to-bottom gradient — the vertical counterpart of [gradientSource],
+      /// Top-to-bottom gradient. The vertical counterpart of [gradientSource],
       /// for the same reason: every row has to be distinct or a vertical shift
       /// produces byte-identical output and the assertion can't fail.
       Uint8List verticalGradient(int w, int h) {
@@ -203,7 +203,7 @@ void main() {
     /// A flat grey frame with two identical black vertical bars: one crossing
     /// only the top band of rows, one crossing only the middle band.
     ///
-    /// Same width, same contrast, same number of rows each — so an unweighted
+    /// Same width, same contrast, same number of rows each, so an unweighted
     /// column sum scores them identically, and any difference in the resulting
     /// profile is the row weighting alone. PNG, not JPEG: the point is a clean
     /// edge signal, and chroma subsampling would smear both bars by an amount

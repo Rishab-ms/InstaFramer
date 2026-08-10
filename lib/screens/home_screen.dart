@@ -48,7 +48,7 @@ class HomeScreen extends StatelessWidget {
       ),
       // Home listens to two independent blocs (PhotoBloc for the framer,
       // PanoramaBloc for the carousel flow), so a single BlocConsumer can't
-      // cover both — MultiBlocListener composes the PanoramaBloc listener
+      // cover both. MultiBlocListener composes the PanoramaBloc listener
       // alongside the existing PhotoBloc BlocConsumer without nesting one
       // builder inside another's listener. Only PhotoBloc drives this
       // screen's *builder* (the panorama flow has no Home-visible UI state,
@@ -67,7 +67,7 @@ class HomeScreen extends StatelessWidget {
                 current is PanoramaIneligibleState,
             listener: (context, state) {
               if (state is PanoramaReadyState) {
-                // Push only here, per Flow A in the panorama plan — pushing
+                // Push only here, per Flow A in the panorama plan. Pushing
                 // PanoramaEditorScreen for an ineligible source would land
                 // the user on a screen whose only content is "no".
                 Navigator.push(
@@ -103,7 +103,7 @@ class HomeScreen extends StatelessWidget {
           },
           listener: (context, state) {
             // A warm share while an editor is already open re-emits
-            // PhotosLoadedState on this (backgrounded) Home route too —
+            // PhotosLoadedState on this (backgrounded) Home route too,
             // without this guard, Home would push a second EditorScreen on
             // top of the one already showing the merged photos.
             if (ModalRoute.of(context)?.isCurrent != true) return;
@@ -136,11 +136,11 @@ class HomeScreen extends StatelessWidget {
             // transition *into* this state, but that transition may have
             // happened while Home wasn't the current route (an editor was
             // open), in which case the isCurrent guard above suppresses it
-            // — Home is then left silently parked in this state with no
+            //. Home is then left silently parked in this state with no
             // dialog ever shown ("dangling state", see the panorama plan's
             // Flow B). `builder` runs both at the original transition (if
             // Home was already current) and again later when Home becomes
-            // current — calling `ModalRoute.of(context)` here subscribes
+            // current. Calling `ModalRoute.of(context)` here subscribes
             // this build to route current-ness changes, so popping back to
             // Home from the editor re-triggers this check. The `isCurrent`
             // condition itself makes this idempotent: once shown, the
@@ -163,7 +163,7 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     const SizedBox(height: AppTheme.spacingLarge),
 
-                    // App Logo/Icon — sized down from a full-screen hero to
+                    // App Logo/Icon. Sized down from a full-screen hero to
                     // something a returning user's eye can skip past quickly
                     // on the way to the buttons below.
                     Center(
@@ -194,7 +194,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AppTheme.spacingLarge),
 
-                    // Feature strip — one compact row instead of three full
+                    // Feature strip, one compact row instead of three full
                     // icon+title+description rows, so returning users scan
                     // past it in a glance rather than reading three lines of
                     // onboarding copy on every open.
@@ -222,7 +222,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AppTheme.spacingXLarge),
 
-                    // Select Photos Button — the primary action; this is the
+                    // Select Photos Button. The primary action; this is the
                     // main framing workflow, so it carries all the visual
                     // weight (filled, full-size).
                     if (state is PhotosLoadingState)
@@ -248,7 +248,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     const SizedBox(height: AppTheme.spacingLarge),
 
-                    // Panorama Carousel entry point — splits one wide photo
+                    // Panorama Carousel entry point. Splits one wide photo
                     // into N tiles of 4:5 for an Instagram carousel. Kept as
                     // a plain text button rather than a second full-size
                     // outlined button: it's a secondary, single-purpose mode
@@ -259,7 +259,7 @@ class HomeScreen extends StatelessWidget {
                         onPressed: () async {
                           // pickSinglePhoto (unlike pickPhotos) returns the
                           // asset directly rather than dispatching to a bloc
-                          // itself — this callsite decides where it goes,
+                          // itself. This callsite decides where it goes,
                           // which is what lets one picker method serve both
                           // the framer (PhotoBloc) and panorama (PanoramaBloc)
                           // entry points.
@@ -274,7 +274,7 @@ class HomeScreen extends StatelessWidget {
                           context.read<PanoramaBloc>().add(
                             PanoramaSourceSelectedEvent(asset),
                           );
-                          // Navigation is NOT here — the listener above pushes
+                          // Navigation is NOT here. The listener above pushes
                           // only on PanoramaReadyState, so an ineligible photo
                           // shows a snackbar instead of a dead-end screen.
                         },
@@ -296,7 +296,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-/// Compact icon-over-label chip for the home screen's feature strip — a
+/// Compact icon-over-label chip for the home screen's feature strip. A
 /// glanceable one-line reminder of what the app does, not an onboarding
 /// explanation (that's what the description used to spell out per-feature).
 class _FeatureChip extends StatelessWidget {

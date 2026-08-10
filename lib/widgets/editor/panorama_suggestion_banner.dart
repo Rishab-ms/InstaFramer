@@ -14,11 +14,11 @@ import '../../screens/panorama_editor_screen.dart';
 /// framer.
 ///
 /// Today, loading a very wide photo into the framer and picking 4:5
-/// produces a tiny strip marooned in white — a genuinely bad result with no
+/// produces a tiny strip marooned in white. A genuinely bad result with no
 /// hint that a better tool is two taps away. This banner is the discovery
 /// path for people who never notice the Home-screen button.
 ///
-/// Dismissal is local widget state, not persisted — a per-photo suggestion
+/// Dismissal is local widget state, not persisted. A per-photo suggestion
 /// isn't worth a preferences key. The caller keys this widget by photo id
 /// (see `editor_screen.dart`), so a different single photo gets a fresh,
 /// un-dismissed banner.
@@ -71,7 +71,7 @@ class _PanoramaSuggestionBannerState extends State<PanoramaSuggestionBanner> {
           ),
           TextButton(
             onPressed: () {
-              // Dispatched before the route replacement, not awaited — the
+              // Dispatched before the route replacement, not awaited. The
               // eligibility check that gates this banner's visibility is the
               // same PanoramaSpec.evaluate the bloc re-runs, so it's already
               // known to land in PanoramaReadyState. PanoramaEditorScreen

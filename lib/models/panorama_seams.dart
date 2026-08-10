@@ -4,17 +4,17 @@ import 'enums.dart';
 import 'panorama_geometry.dart';
 import 'panorama_spec.dart';
 
-/// Automatic seam placement — **built, kept, and deliberately not wired up.**
+/// Automatic seam placement. **Built, kept, and deliberately not wired up.**
 ///
 /// ⚠️ Nothing calls this. `PanoramaBloc` opens every photo centred on both
 /// axes and leaves positioning entirely to the user's own dragging, and
-/// `ImageProcessor.computeEdgeEnergyProfile` — the input this needs — is no
+/// `ImageProcessor.computeEdgeEnergyProfile`: the input this needs. Is no
 /// longer computed at pick time. Read this note before reconnecting any of it.
 ///
 /// **Why it is off.** The product reason outranks the algorithm. An
 /// auto-chosen offset moves the photo off centre with uneven background bars
 /// on the very first frame the user sees. That reads as a rendering fault, not
-/// a considered choice — and it is spent solving a problem the user has not
+/// a considered choice, and it is spent solving a problem the user has not
 /// gone looking for yet. A tool that quietly repositions your photo before you
 /// have touched anything is harder to trust than one that hands it to you
 /// centred and gets out of the way. The measurable win at the seam was never
@@ -28,19 +28,19 @@ import 'panorama_spec.dart';
 ///
 /// **Why keep it.** The geometry, scoring and guard rails are correct and
 /// tested (`test/models/panorama_seams_test.dart`), and the failure modes they
-/// encode — unreachable offsets, ties resolving to an extreme, quieting a seam
-/// by emptying a slide — are traps any future attempt would fall into again.
+/// encode. Unreachable offsets, ties resolving to an extreme, quieting a seam
+/// by emptying a slide. Are traps any future attempt would fall into again.
 /// If automatic positioning ever returns it should be *offered*, on request,
-/// against a framing the user already chose — never applied to an opening
+/// against a framing the user already chose, never applied to an opening
 /// state.
 ///
 
 /// Seams sit at fixed spacing (one per tile boundary), so there is exactly
-/// one free parameter — the horizontal offset — which makes good seam
+/// one free parameter. The horizontal offset, which makes good seam
 /// placement a 1-D minimization rather than a vision problem. Pure Dart, no
 /// isolate: the expensive part (decoding the photo and computing the energy
 /// profile) already happened once via `ImageProcessor.computeEdgeEnergyProfile`
-/// — re-optimizing over that cached ~600-element array costs microseconds,
+///. Re-optimizing over that cached ~600-element array costs microseconds,
 /// cheap enough to re-run on every tile-count, zoom or fit-mode change.
 ///
 /// The search is deliberately conservative, because a *surprising* framing is
@@ -49,7 +49,7 @@ import 'panorama_spec.dart';
 /// 1. **Only reachable offsets are considered.** The sweep spans the travel
 ///    [PanoramaGeometry] actually allows, not a nominal ±0.5 tile. Sweeping
 ///    past the clamp made every over-range candidate score identically, so the
-///    first one scanned — the hard-left extreme — won on a tie and got stored
+///    first one scanned. The hard-left extreme. Won on a tie and got stored
 ///    as the user-visible slider value.
 /// 2. **Centre wins ties, and near-ties.** Offsets are only preferred over
 ///    centre when they beat it by [_minRelativeGain]; among candidates within
@@ -58,8 +58,8 @@ import 'panorama_spec.dart';
 ///    background bars scores zero, so an unconstrained search is actively
 ///    rewarded for shoving the photo into a corner until a whole slide is
 ///    blank. Candidates that leave any tile less covered than
-///    [_minTileCoverage] — or than centred framing already does, whichever is
-///    lower — are rejected outright.
+///    [_minTileCoverage], or than centred framing already does, whichever is
+///    lower. Are rejected outright.
 class PanoramaSeams {
   const PanoramaSeams._();
 
@@ -70,7 +70,7 @@ class PanoramaSeams {
   /// the result back to the *smallest* move that quiets a seam, the window
   /// half-width is exactly how much room the seam ends up leaving around the
   /// edge it dodged. At 1% the seam settled a couple of percent from a face or
-  /// a pole — technically clear, visibly close.
+  /// a pole. Technically clear, visibly close.
   static const double _windowFraction = 0.02;
 
   /// How much better than centred framing a candidate must be before the photo
@@ -87,13 +87,13 @@ class PanoramaSeams {
   static const double _minTileCoverage = 0.5;
 
   /// How much quieter another tile count's seams must be before it is worth
-  /// suggesting — see [cleanerTileCount]. Twice [_minRelativeGain], because
+  /// suggesting. See [cleanerTileCount]. Twice [_minRelativeGain], because
   /// changing tile count changes how many slides get posted, which is a far
   /// bigger ask than shifting the photo a few percent.
   static const double _minTileCountGain = 0.30;
 
   /// Sweeps the reachable seam offsets and returns the one that best keeps the
-  /// interior seams out of faces, poles and building edges — or 0 when no
+  /// interior seams out of faces, poles and building edges, or 0 when no
   /// candidate is a clear enough improvement on simply centring the photo.
   ///
   /// [energyProfile] is normalised 0..1 across the **full source width**
@@ -123,7 +123,7 @@ class PanoramaSeams {
 
     final centred = geometryAt(0);
     final maxOffset = centred.maxCropOffsetX;
-    // The photo already spans the canvas width — there is nothing to slide,
+    // The photo already spans the canvas width. There is nothing to slide,
     // and reporting anything but 0 would put the slider somewhere the render
     // can't follow.
     if (maxOffset <= 0) return 0;
@@ -168,9 +168,9 @@ class PanoramaSeams {
   /// A tile count whose seams would fall on markedly quieter source than the
   /// current one, or null when the current count is already as good as it gets.
   ///
-  /// The symmetric alternative to nudging. Zoom cannot help here — scaling
+  /// The symmetric alternative to nudging. Zoom cannot help here. Scaling
   /// happens about the canvas centre, so the centre is a fixed point and every
-  /// even tile count has a seam pinned there regardless of zoom — and the
+  /// even tile count has a seam pinned there regardless of zoom, and the
   /// nudge buys a better cut at the cost of visibly uneven bars. Changing the
   /// tile count moves every seam, keeps the photo full size, and keeps the
   /// framing symmetric.
@@ -194,7 +194,7 @@ class PanoramaSeams {
   }) {
     if (energyProfile.isEmpty) return null;
 
-    /// Null for a count that would leave a slide mostly blank — advising a
+    /// Null for a count that would leave a slide mostly blank. Advising a
     /// framing the empty-tile warning immediately flags would be incoherent.
     double? energyAt(int tileCount) {
       final geometry = PanoramaGeometry.resolve(
@@ -224,8 +224,8 @@ class PanoramaSeams {
       if (energy == null || energy > threshold) continue;
 
       // Among counts that clear the bar, prefer the genuinely quietest, and on
-      // an effective tie the smallest change from what the user already has —
-      // this is advice about a change, so it should ask for the least one.
+      // an effective tie the smallest change from what the user already has.
+      // This is advice about a change, so it should ask for the least one.
       final isBetter = energy < bestEnergy * (1 - _tieTolerance);
       final isSmallerChange =
           best != null &&
@@ -243,7 +243,7 @@ class PanoramaSeams {
   /// Mean energy across the interior seams of [geometry].
   ///
   /// Averaged rather than summed so the number stays comparable across tile
-  /// counts — the relative thresholds above are meaningless against a total
+  /// counts. The relative thresholds above are meaningless against a total
   /// that grows with the number of seams.
   static double _seamEnergy(
     PanoramaGeometry geometry,
@@ -264,12 +264,12 @@ class PanoramaSeams {
   /// Energy in a ±[_windowFraction] window around a seam, as an even blend of
   /// the window's peak and its mean.
   ///
-  /// The peak is what actually decides a seam — it either severs a hard edge
+  /// The peak is what actually decides a seam. It either severs a hard edge
   /// or it doesn't, and one strong column is enough to ruin it. The mean stops
   /// a uniformly busy neighbourhood (foliage, a crowd) from scoring as well as
   /// a genuinely clean one that happens to contain a single spike. Summing the
   /// window, as this did before, let a wide soft gradient outweigh a single
-  /// hard edge — the opposite of what the eye notices at a slide boundary.
+  /// hard edge. The opposite of what the eye notices at a slide boundary.
   static double _windowEnergy(List<double> profile, double srcFrac) {
     final samples = profile.length;
     final start = ((srcFrac - _windowFraction) * samples).floor().clamp(

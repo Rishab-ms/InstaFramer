@@ -106,10 +106,10 @@ class ExportService {
   /// Renders [source] into a panorama canvas and saves it as [PanoramaSettings.tileCount]
   /// separate tiles.
   ///
-  /// Different from [exportPhotos] in every dimension that matters — one
+  /// Different from [exportPhotos] in every dimension that matters, one
   /// source photo in, N tiles out; strictly **sequential** writes instead of
   /// concurrent batches; no `preserveMetadata` (see `ImageProcessor.processPanorama`
-  /// for why panorama tiles carry no EXIF) — so this is a separate method
+  /// for why panorama tiles carry no EXIF), so this is a separate method
   /// rather than four boolean flags bolted onto `exportPhotos`.
   Stream<PanoramaExportProgress> exportPanorama({
     required AssetEntity source,
@@ -141,14 +141,14 @@ class ExportService {
         '',
       );
 
-      // Reverse iteration is deliberate — Instagram's picker sorts newest
+      // Reverse iteration is deliberate. Instagram's picker sorts newest
       // first and numbers carousel slides by tap order, so saving 1..N would
       // land tile N (the newest) top-left and tapping left-to-right would
       // play the panorama backwards. Saving N..1 makes tile 1 the newest, so
       // the grid reads left-to-right correctly. Do not "fix" this to a
       // forward loop. Tile numbering in the filename stays 1..N.
       //
-      // No Future.wait/batching either — each tile must be fully committed
+      // No Future.wait/batching either. Each tile must be fully committed
       // to MediaStore (via Gal.putImage) before the next is written, so
       // _id/date_added increase monotonically and the picker can't scramble
       // the order.
@@ -162,7 +162,7 @@ class ExportService {
         await file.delete();
 
         // saved counts forward even though the loop runs backwards, so the
-        // UI always shows "Saving tile 1 of N -> N of N" — never surface the
+        // UI always shows "Saving tile 1 of N -> N of N", never surface the
         // internal save order.
         yield PanoramaExportProgress(
           phase: PanoramaExportPhase.saving,

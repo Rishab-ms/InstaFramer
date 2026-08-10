@@ -19,7 +19,7 @@ class PanoramaPreview extends StatelessWidget {
   final double sourceAspect;
 
   /// Composition guide lines to draw over the canvas, as canvas-height
-  /// fractions — empty for none. The editor passes
+  /// fractions. Empty for none. The editor passes
   /// [PanoramaGuideOverlay.thirds] only while the user is actively dragging
   /// the vertical position: guides help while you are placing something and
   /// clutter the picture the rest of the time.
@@ -38,7 +38,7 @@ class PanoramaPreview extends StatelessWidget {
     return AspectRatio(
       aspectRatio: settings.canvasRatio,
       // Rounded corners so the dashed outline (painted below) has somewhere
-      // to bend — clipped to match so a translated photo can't paint past
+      // to bend. Clipped to match so a translated photo can't paint past
       // the canvas bounds either, mirroring `copyCrop` self-clamping the
       // export's canvas.
       child: ClipRRect(
@@ -63,7 +63,7 @@ class PanoramaPreview extends StatelessWidget {
                 positions: guidePositions,
                 color: _seamColor(settings),
               ),
-            // A visible outline regardless of background choice — a white
+            // A visible outline regardless of background choice. A white
             // background otherwise reads as "no canvas at all" against the
             // screen's own background, so the canvas edge needs its own
             // line rather than relying on a color contrast that only
@@ -84,7 +84,7 @@ class PanoramaPreview extends StatelessWidget {
 
   /// Picks a dashed-line color that complements the actual background
   /// choice, rather than boxing the seam in its own backdrop. Fill mode has
-  /// no background bars — the photo covers the whole canvas — so there's no
+  /// no background bars. The photo covers the whole canvas, so there's no
   /// single background color to key off; white is the least-bad default
   /// there.
   Color _seamColor(PanoramaSettings settings) {
@@ -112,7 +112,7 @@ class PanoramaPreview extends StatelessWidget {
 }
 
 /// Dashed, rounded-rect canvas outline. A plain grey rather than a
-/// theme-derived color — like the seam line, this needs to read consistently
+/// theme-derived color, like the seam line, this needs to read consistently
 /// against white/black/blur backgrounds, not shift with light/dark theme.
 class _PanoramaBorderPainter extends CustomPainter {
   static const double radius = 4;

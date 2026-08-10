@@ -14,7 +14,7 @@ enum BackgroundType {
 /// Export dimension presets offered in preferences.
 ///
 /// ⚠️ Persisted by `index` (`UserPreferences.toJson`), so the declaration order
-/// is load-bearing — appending is safe, reordering or removing silently
+/// is load-bearing. Appending is safe, reordering or removing silently
 /// remaps every existing user's saved preset.
 enum ImageSizePreset {
   instagramPortrait(
@@ -39,7 +39,7 @@ enum ImageSizePreset {
   ),
   custom(
     'Custom Size',
-    // Only a starting point — the real value comes from
+    // Only a starting point. The real value comes from
     // UserPreferences.customImageSize.
     ImageSize(width: 1080, height: 1350),
   );
@@ -52,7 +52,7 @@ enum ImageSizePreset {
 
 /// Aspect ratio of each individual carousel tile/slide.
 enum PanoramaTileRatio {
-  /// Instagram's standard portrait post shape — the default.
+  /// Instagram's standard portrait post shape. The default.
   portrait(4 / 5, '4:5'),
 
   /// Instagram's square post shape.
@@ -66,7 +66,7 @@ enum PanoramaTileRatio {
 
 /// How the source photo is placed into the panorama canvas.
 enum PanoramaFitMode {
-  /// Contain-fit, leftover padded with the background. Nothing is cropped —
+  /// Contain-fit, leftover padded with the background. Nothing is cropped,
   /// scale and background controls apply.
   fit('Fit'),
 
@@ -81,7 +81,7 @@ enum PanoramaFitMode {
 /// Phase of a panorama export.
 ///
 /// Two-phase because the single `processPanorama` isolate call fully renders
-/// the canvas before any tile exists to save — a naive single-percentage
+/// the canvas before any tile exists to save. A naive single-percentage
 /// stream would sit at 0% then jump. `rendering` is indeterminate; `saving`
 /// is determinate, one tick per tile committed to the gallery.
 enum PanoramaExportPhase { rendering, saving }

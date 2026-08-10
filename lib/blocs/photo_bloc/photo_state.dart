@@ -106,7 +106,7 @@ class PhotosExportedState extends PhotoState {
 /// state exists to pause the merge and let `CreateModeDialog` ask "Framed
 /// Photo or Panorama Carousel?" instead of assuming Framed Photo. Only
 /// reached for a *fresh* single share (no editor session already in
-/// flight) that also passes `PanoramaSpec.evaluate` — see
+/// flight) that also passes `PanoramaSpec.evaluate`: see
 /// `_onExternalMediaShared`.
 class SharedPhotoModeSelectionState extends PhotoState {
   final AssetEntity photo;

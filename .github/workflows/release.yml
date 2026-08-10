@@ -11,10 +11,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Setup Java
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
         java-version: '17'
@@ -25,13 +25,13 @@ jobs:
         # Must satisfy pubspec.yaml's `sdk: ^3.10.4`. The previous pin of
         # 3.24.0 ships Dart 3.5, so `flutter pub get` failed version solving
         # before a single file was compiled. Keep this in step with the SDK
-        # constraint — bumping one without the other breaks CI only, which is
+        # constraint. Bumping one without the other breaks CI only, which is
         # the slowest place to find out.
         flutter-version: '3.44.5'
         channel: 'stable'
 
     - name: Set up Android SDK
-      uses: android-actions/setup-android@v3
+      uses: android-actions/setup-android@v4
 
     - name: Accept Android licenses
       run: yes | sdkmanager --licenses
@@ -51,8 +51,7 @@ jobs:
         mv build/app/outputs/flutter-apk/app-release.apk InstaFrame-v${VERSION}.apk
 
     - name: Create Release
-      # v1 runs on the deprecated Node 16 runtime.
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         files: InstaFrame-v*.apk
         generate_release_notes: true

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// InstaFramer's home-screen mark: four open, viewfinder-style corner
-/// brackets — no connecting bars (which read as a cage/grid at small sizes,
+/// brackets, no connecting bars (which read as a cage/grid at small sizes,
 /// as `LucideIcons.frame` did) and no photo glyph inside. Custom-painted
 /// rather than pulled from an icon library on purpose: a brand mark is
 /// supposed to be distinctive, the opposite of the app's small in-flow

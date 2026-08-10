@@ -21,7 +21,7 @@ class ImageProcessor {
   static const int _previewQuality = 75;
 
   /// Weight given to the top and bottom rows of frame when scoring seam
-  /// energy, relative to 1.0 at the middle row — see
+  /// energy, relative to 1.0 at the middle row. See
   /// [_computeEdgeEnergyProfileInIsolate]. Low enough that a subject beats
   /// edge clutter, high enough that edge clutter still registers.
   static const double _edgeRowWeight = 0.35;
@@ -82,18 +82,18 @@ class ImageProcessor {
   /// 0..1 and resampled to [samples] buckets spanning the full source width.
   ///
   /// ⚠️ **Not called.** This is the input to `PanoramaSeams`, which is kept
-  /// but deliberately unwired — see the note on that class for why automatic
+  /// but deliberately unwired. See the note on that class for why automatic
   /// positioning is off. Nothing computes this at pick time any more, which
   /// also spares every panorama an isolate round-trip it wasn't using.
   ///
   /// Columns with a strong vertical edge (a person, a pole, a building
-  /// corner) score high; flat sky or water scores near zero — the seam
+  /// corner) score high; flat sky or water scores near zero. The seam
   /// offset that minimizes energy at every seam is one that avoids cutting
   /// through content. Rows near the vertical centre of frame count for more
   /// than rows at the top and bottom, since that is where subjects sit and
   /// where a cut is most conspicuous.
   ///
-  /// Runs on a thumbnail, not `originBytes` — no full decode needed, and the
+  /// Runs on a thumbnail, not `originBytes`: no full decode needed, and the
   /// profile only has to be directionally accurate, not pixel-precise.
   Future<List<double>> computeEdgeEnergyProfile(
     Uint8List thumbnailBytes, {
@@ -108,7 +108,7 @@ class ImageProcessor {
   static List<double> _computeEdgeEnergyProfileInIsolate(
     _EdgeEnergyParams params,
   ) {
-    // 1. Decode the thumbnail (already small — no orientation-baking or
+    // 1. Decode the thumbnail (already small, no orientation-baking or
     // resizing needed, unlike the full export path).
     final image = img.decodeImage(params.thumbnailBytes);
     if (image == null) throw Exception('Failed to decode image');
@@ -128,7 +128,7 @@ class ImageProcessor {
     //
     // A raised cosine (peak 1.0 at the middle row) rather than a hard band, so
     // the weighting has no cliff a subject can straddle, lifted onto
-    // [_edgeRowWeight] so the outermost rows still count for something — a
+    // [_edgeRowWeight] so the outermost rows still count for something. A
     // horizon cutting the very top of frame is a real seam hazard, just a
     // lesser one than a torso through the middle.
     final rowWeights = List<double>.generate(height, (y) {
@@ -162,7 +162,7 @@ class ImageProcessor {
 
     // 4. Normalise to 0..1 by dividing every column by the single highest
     // score in the image. This makes the profile comparable across photos
-    // regardless of how busy or resolution each one is — `bestSeamOffset`
+    // regardless of how busy or resolution each one is, `bestSeamOffset`
     // only cares about relative energy (higher = worse seam spot), not
     // absolute pixel-difference units.
     final maxEnergy = rawEnergy.fold<double>(0, (m, e) => e > m ? e : m);
@@ -173,7 +173,7 @@ class ImageProcessor {
     // 5. Downsample from one score per source pixel-column (could be
     // thousands) to a fixed [samples] buckets spanning the same width. Each
     // output bucket is the average of every source column that falls inside
-    // it, so this is a box-filter resize, not point sampling — a single
+    // it, so this is a box-filter resize, not point sampling. A single
     // spike one pixel wide shouldn't vanish just because it landed between
     // two sample points. The fixed sample count keeps `bestSeamOffset`'s
     // search cost independent of the source photo's actual resolution.
@@ -195,10 +195,10 @@ class ImageProcessor {
   }
 
   /// Up to 6 suggested background colors extracted from [thumbnailBytes],
-  /// for offering alongside White/Black/Blur — see `plans/color_picking.md`.
+  /// for offering alongside White/Black/Blur. See `plans/color_picking.md`.
   ///
   /// Runs on a thumbnail (same convention as [computeEdgeEnergyProfile]) and
-  /// downscales further before quantizing — dominant color doesn't need
+  /// downscales further before quantizing. Dominant color doesn't need
   /// anywhere near full resolution, and this keeps the isolate call cheap
   /// regardless of source photo size.
   Future<List<Color>> extractPaletteColors(Uint8List thumbnailBytes) async {
@@ -209,7 +209,7 @@ class ImageProcessor {
     return argbValues.map(Color.new).toList();
   }
 
-  /// Returns raw ARGB ints rather than [Color] — safer to send across the
+  /// Returns raw ARGB ints rather than [Color]. Safer to send across the
   /// isolate boundary than a `dart:ui` object graph, and the public method
   /// wraps them back into [Color] on the calling side.
   static Future<List<int>> _extractPaletteColorsInIsolate(
@@ -218,7 +218,7 @@ class ImageProcessor {
     final decoded = img.decodeImage(thumbnailBytes);
     if (decoded == null) return const [];
 
-    // Downscale further still — same trick as the blur background generator.
+    // Downscale further still, same trick as the blur background generator.
     // Color quantization cares about the mix of hues present, not detail.
     final small = decoded.width >= decoded.height
         ? img.copyResize(decoded, width: math.min(200, decoded.width))
@@ -268,7 +268,7 @@ class ImageProcessor {
     img.Image? source = img.decodeImage(params.sourceBytes);
     if (source == null) throw Exception('Failed to decode image');
 
-    // 2. Bake EXIF rotation, guarded — bakeOrientation does an unconditional
+    // 2. Bake EXIF rotation, guarded. BakeOrientation does an unconditional
     // full-image copy before checking whether there is anything to do, which is
     // tens of megabytes wasted on a large source.
     if (source.exif.imageIfd.hasOrientation &&
@@ -349,7 +349,7 @@ class ImageProcessor {
       params.settings.backgroundType,
       targetSize,
       params.settings.blurIntensity,
-      // The framer has no photo-color picker yet — see
+      // The framer has no photo-color picker yet. See
       // plans/color_picking.md's rollout order (panorama ships first).
       customColor: null,
     );
@@ -395,7 +395,7 @@ class ImageProcessor {
       height: targetSize.height,
     );
 
-    // A picked photo color overrides backgroundType entirely — see
+    // A picked photo color overrides backgroundType entirely. See
     // `plans/color_picking.md`. Checked first, ahead of the switch, so
     // white/black/blur never runs pointlessly underneath it.
     if (customColor != null) {
@@ -461,7 +461,7 @@ class ImageProcessor {
     }
 
     // 3. Cover the target: centre-crop to the target aspect, then upscale.
-    // A plain resize here would stretch rather than cover — imperceptible on a
+    // A plain resize here would stretch rather than cover. Imperceptible on a
     // 4:5 canvas, but a visible horizontal smear on a 3.2:1 panorama canvas.
     // The background stays centred while the photo slides, so both offsets
     // are 0.
@@ -476,11 +476,11 @@ class ImageProcessor {
   }
 
   /// Centre-crops [src] to the target aspect, then resizes to exactly
-  /// [targetW]x[targetH] — 'cover' semantics, no stretching.
+  /// [targetW]x[targetH]. 'Cover' semantics, no stretching.
   ///
   /// [offsetX] is a horizontal shift in **target** pixels; it is converted to
   /// source pixels and applied to the crop window. [interpolation] is the
-  /// caller's quality/speed call — cubic for the photo itself, linear for an
+  /// caller's quality/speed call. Cubic for the photo itself, linear for an
   /// already-blurred background where the extra taps buy nothing. Both are
   /// required rather than defaulted so every call site states its intent.
   static img.Image _coverCropResize(
@@ -546,7 +546,7 @@ class ImageProcessor {
   /// [offsetX] shifts the photo horizontally from centre, in canvas pixels.
   /// [cornerRadiusFraction] rounds the photo's own corners (as a fraction of
   /// its shorter side) before compositing, so the canvas background shows
-  /// through — 0 for the plain framer, which has no rounding concept. Both
+  /// through, 0 for the plain framer, which has no rounding concept. Both
   /// are required rather than defaulted so every call site states its
   /// intent.
   static void _overlayScaledImage(
@@ -582,12 +582,12 @@ class ImageProcessor {
     if (cornerRadiusFraction > 0) {
       final radius = (cornerRadiusFraction * math.min(w, h)).round();
       // compositeImage's alpha blend reads this per-pixel, so the mask has
-      // to live in an actual alpha channel — a JPEG-decoded source has none.
+      // to live in an actual alpha channel. A JPEG-decoded source has none.
       resized = resized.convert(numChannels: 4);
       _applyRoundedCorners(resized, radius);
     }
 
-    // Center it, then apply the horizontal nudge — bounded by the slack
+    // Center it, then apply the horizontal nudge. Bounded by the slack
     // between the photo and the canvas edge. Fit mode's contract is that
     // nothing is cropped away, so the photo may slide within the bars but
     // never past them. The slack is zero (and the nudge correctly a no-op)
@@ -603,7 +603,7 @@ class ImageProcessor {
 
   /// Zeroes alpha outside a [radius]-px quarter-circle in each corner of
   /// [image], in place. Only touches the four `radius x radius` corner
-  /// boxes, not the whole image — cheap even at high export resolution.
+  /// boxes, not the whole image. Cheap even at high export resolution.
   ///
   /// A ~1px analytic band around the arc (the `+ 0.5` / `.clamp` below)
   /// antialiases the edge; a hard binary cut visibly jags at typical tile

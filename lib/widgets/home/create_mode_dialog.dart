@@ -10,7 +10,7 @@ import '../../models/enums.dart';
 import '../../models/panorama_spec.dart';
 
 /// Mode picker shown for a fresh single-photo share that's panorama-eligible
-/// — see `SharedPhotoModeSelectionState`.
+///. See `SharedPhotoModeSelectionState`.
 ///
 /// `barrierDismissible: false` + `PopScope(canPop: false)`: the shared photo
 /// is already copied into the gallery by the time this appears
@@ -34,7 +34,7 @@ class CreateModeDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     // Re-running evaluate() here is cheap (pure arithmetic on dimensions,
-    // no isolate) and keeps eligibility in one place — this dialog only
+    // no isolate) and keeps eligibility in one place. This dialog only
     // shows when it already returned eligible, so suggestedTiles is the
     // only field needed from it.
     final suggestedTiles = PanoramaSpec.evaluate(
@@ -61,7 +61,7 @@ class CreateModeDialog extends StatelessWidget {
               title: 'Framed Photo',
               subtitle: 'Fit to 4:5 with a background',
               onTap: () {
-                // Close the dialog before dispatching — HomeScreen's
+                // Close the dialog before dispatching. HomeScreen's
                 // PhotoBloc listener pushes EditorScreen on the resulting
                 // PhotosLoadedState, and that push must land on top of an
                 // already-popped dialog route, not underneath a lingering

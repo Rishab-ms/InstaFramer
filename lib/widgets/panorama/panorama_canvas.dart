@@ -9,7 +9,7 @@ import '../../models/panorama_geometry.dart';
 import '../../models/panorama_settings.dart';
 
 /// Widget-composited background + photo layer of the panorama canvas, with
-/// no seam overlay — reproduces `ImageProcessor`'s export maths in widgets
+/// no seam overlay. Reproduces `ImageProcessor`'s export maths in widgets
 /// (GPU) rather than running `processPanorama` on every slider tick. See the
 /// "UI" section of the panorama plan for the export ↔ widget correspondence
 /// table this mirrors.
@@ -17,13 +17,13 @@ import '../../models/panorama_settings.dart';
 /// Split out from [PanoramaPreview] so the tile-count-aware seam grid can sit
 /// on top for the in-editor preview, while the full-screen "preview like
 /// Instagram" view can slice this same canvas into individual tiles with no
-/// overlay at all — same compositing, two different frames around it.
+/// overlay at all, same compositing, two different frames around it.
 class PanoramaCanvas extends StatelessWidget {
   final AssetEntity source;
   final PanoramaSettings settings;
 
   /// Needed (rather than measured off the rendered image) to size the exact
-  /// contain-fit photo rect in Fit mode — see [_buildPhoto].
+  /// contain-fit photo rect in Fit mode. See [_buildPhoto].
   final double sourceAspect;
 
   const PanoramaCanvas({
@@ -59,7 +59,7 @@ class PanoramaCanvas extends StatelessWidget {
   Widget _buildPhoto(PanoramaGeometry geometry) {
     // Fill ↔ `_coverCropResize`: BoxFit.cover reproduces cover-then-crop with
     // no widget-side crop math needed, and `alignment` places the crop window
-    // — the widget equivalent of the export's cropX. Alignment (rather than a
+    //. The widget equivalent of the export's cropX. Alignment (rather than a
     // translate) is what keeps the photo covering the full canvas at every
     // offset; translating a cover-fitted image would expose an empty band at
     // one edge that the export never produces. No boundary line needed here:
@@ -68,7 +68,7 @@ class PanoramaCanvas extends StatelessWidget {
     if (settings.fitMode == PanoramaFitMode.fill) {
       // cropStart runs 0..cropSlack; Alignment.x runs -1..1 over that range.
       // Same mapping on Y, where the crop window is what the vertical nudge
-      // moves — only one axis has any slack at a time (the cover fit consumes
+      // moves, only one axis has any slack at a time (the cover fit consumes
       // the other exactly), so the unused one lands on 0.
       final cropSlackX = 1.0 - geometry.cropWidth;
       final alignmentX = cropSlackX <= 0
@@ -94,7 +94,7 @@ class PanoramaCanvas extends StatelessWidget {
 
     // Fit ↔ `_overlayScaledImage`: positioned explicitly from the geometry's
     // photo rect rather than left to BoxFit.contain plus a translate to work
-    // out implicitly — an exact rect is what a corner-radius clip needs to hug
+    // out implicitly. An exact rect is what a corner-radius clip needs to hug
     // the photo's real edges rather than the canvas's own, and it applies the
     // nudge and its clamp in one step. Box aspect always comes out equal to
     // [sourceAspect] by construction, so BoxFit.fill inside it is lossless,
@@ -135,11 +135,11 @@ class PanoramaCanvas extends StatelessWidget {
 
   Widget _buildBackground() {
     if (settings.fitMode == PanoramaFitMode.fill) {
-      // No bars in Fill — background is fully covered by the photo.
+      // No bars in Fill. Background is fully covered by the photo.
       return const SizedBox.shrink();
     }
 
-    // A picked photo color overrides backgroundType entirely — see
+    // A picked photo color overrides backgroundType entirely. See
     // `plans/color_picking.md`.
     final customColor = settings.backgroundColor;
     if (customColor != null) {

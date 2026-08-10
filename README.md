@@ -4,16 +4,16 @@
   <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter"/>
   <img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart"/>
   <img src="https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android"/>
-  <img src="https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=ios&logoColor=white" alt="iOS"/>
   <img src="https://img.shields.io/badge/Open%20Source-000000?style=for-the-badge&logo=github&logoColor=white" alt="Open Source"/>
   <img src="https://img.shields.io/badge/MIT-License-blue?style=for-the-badge" alt="MIT License"/>
 </p>
 
-> A simple, open-source photo framing tool designed specifically for Instagram content creators. Transform multiple photos with consistent framing, aspect ratios, and backgrounds in one seamless workflow.
+> An open-source photo framing tool for Instagram. Apply the same aspect ratio, scale and background across a batch of photos in one pass.
 
 ## 📱 What is InstaFrame?
 
-InstaFrame is a mobile app that simplifies photo preparation for Instagram creators. Instead of editing photos one by one, apply consistent framing to multiple photos at once - perfect for creating uniform carousels where each photo stands alone with professional borders and backgrounds.
+InstaFrame is a mobile app for preparing photos for Instagram. Instead of editing them one at a time, you frame a whole batch at once, which is what makes a carousel look like a set rather than a pile.
+
 ## 📸 Screenshots
 
 <p align="center">
@@ -30,7 +30,7 @@ InstaFrame is a mobile app that simplifies photo preparation for Instagram creat
 The core functionality allows you to select multiple photos and apply consistent Instagram-optimized framing with white, black, or blur backgrounds.
 
 ### 🌄 **Panorama Module**
-Split one wide or panoramic photo into several 4:5 tiles that you upload as a carousel — so the shot reads as one continuous panorama when swiped, instead of being posted as a 16:9 or 21:9 image that gets shown tiny in the feed.
+Split one wide or panoramic photo into several 4:5 tiles that you upload as a carousel, so the shot reads as one continuous panorama when swiped instead of being posted as a 16:9 or 21:9 image that gets shown tiny in the feed.
 
 ### 🎞️ **Coming Soon: Photo Strip Module (V2.0)**
 A planned feature to transform multiple photos into seamless carousel strips that flow together as one continuous visual story, automatically sliced into Instagram slides.
@@ -42,7 +42,7 @@ A planned feature to transform multiple photos into seamless carousel strips tha
 - **Share Menu Import**: Share photos to InstaFrame straight from your gallery or any other app (Android)
 - **Batch Export**: Process and save all photos simultaneously
 - **EXIF Preservation**: Camera, lens, and location metadata is carried over to exported photos (toggleable in Settings)
-- **Dark Mode**: Beautiful Material 3 theming with auto/light/dark modes
+- **Dark Mode**: Material 3 theming with auto/light/dark modes
 - **Smart Settings**: Remembers your preferences across sessions
 
 #### 🖼️ **Framer Module (Current)**
@@ -57,13 +57,13 @@ A planned feature to transform multiple photos into seamless carousel strips tha
 - **Smart Tile Count**: Suggests the number of tiles that best fits your photo, and lets you override it
 - **Fit or Fill**: *Fit* keeps every pixel and pads the edges with White/Black/Blur; *Fill* crops edge-to-edge for a full-bleed look
 - **Live Seam Guides**: See exactly where each tile boundary lands before you export
-- **Automatic Seam Placement**: Analyses the photo and positions tile boundaries over flat areas — sky, water, blank walls — instead of across faces and subjects
-- **Seam Nudge**: Override the automatic placement whenever you want something different
+- **Horizontal Position**: Slide the photo left or right to choose where the tile boundaries fall
+- **Vertical Position** (Fill only): Choose which band of the photo the crop keeps, with rule-of-thirds guides while you drag
 - **Quality Readout**: Shows each slide's output resolution as you change the tile count, and warns when edge tiles would come out mostly empty
 - **Guaranteed Order**: Tiles are saved so they appear left-to-right in Instagram's picker, ready to tap in sequence
 
 #### 🎞️ **Photo Strip Module (Coming Soon in V2.0)**
-- **Seamless Carousel Creation**: Transform multiple photos into flowing visual stories
+- **Continuous Strips**: Lay several photos end to end and slice the result into slides
 - **Height-First Algorithm**: Content dictates the length, automatically sliced into Instagram slides
 - **Gap Control**: Adjust spacing between images (0px for seamless)
 - **Border Radius**: Round image corners within the strip
@@ -72,7 +72,7 @@ A planned feature to transform multiple photos into seamless carousel strips tha
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Flutter SDK (3.10.4 or higher)
+- Flutter SDK 3.44 or higher (Dart 3.10.4 or higher)
 - Android Studio / VS Code with Flutter extensions
 - Android device or emulator (iOS support coming soon)
 
@@ -80,8 +80,8 @@ A planned feature to transform multiple photos into seamless carousel strips tha
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/rishab-ms/instaframe.git
-   cd instaframe
+   git clone https://github.com/Rishab-ms/InstaFramer.git
+   cd InstaFramer
    ```
 
 2. **Install dependencies**
@@ -107,17 +107,17 @@ flutter build appbundle --release
 ## 📥 Download & Install
 
 ### Latest Release
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/rishab-ms/instaframe?style=for-the-badge)](https://github.com/rishab-ms/instaframe/releases/latest)
-[![GitHub Release Downloads](https://img.shields.io/github/downloads/rishab-ms/instaframe/total?style=for-the-badge)](https://github.com/rishab-ms/instaframe/releases)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Rishab-ms/InstaFramer?style=for-the-badge)](https://github.com/Rishab-ms/InstaFramer/releases/latest)
+[![GitHub Release Downloads](https://img.shields.io/github/downloads/Rishab-ms/InstaFramer/total?style=for-the-badge)](https://github.com/Rishab-ms/InstaFramer/releases)
 
 **Download the latest APK:**
-1. Go to [Releases](https://github.com/rishab-ms/instaframe/releases)
+1. Go to [Releases](https://github.com/Rishab-ms/InstaFramer/releases)
 2. Download the latest `InstaFrame-vX.X.X.apk` file
 3. Install on your Android device
 
 ### Installation Instructions
 1. **Enable Unknown Sources**: On Android, go to Settings > Apps > Special access > Install unknown apps
-2. **Download APK**: From the [latest release](https://github.com/rishab-ms/instaframe/releases/latest)
+2. **Download APK**: From the [latest release](https://github.com/Rishab-ms/InstaFramer/releases/latest)
 3. **Install**: Open the downloaded APK file and follow the installation prompts
 4. **Grant Permissions**: Allow camera/gallery access when prompted
 
@@ -145,8 +145,6 @@ git push origin v1.0.0
 # 4. GitHub Actions will automatically create the release
 ```
 
-*Note: Replace `rishab-ms` in URLs with your actual GitHub username*
-
 ## 🎨 How to Use
 
 ### 🖼️ **Current: Framer Module**
@@ -161,12 +159,12 @@ git push origin v1.0.0
 
 ### 🌄 **Panorama Module**
 1. **Start a Panorama**: Tap "Create a Panorama Carousel" on the home screen, or share a single wide photo to InstaFrame and choose "Panorama Carousel" in the popup
-2. **Set the Tile Count**: The app suggests the count that best fits your photo — override it to trade padding for taller, more dramatic slices
+2. **Set the Tile Count**: The app suggests the count that best fits your photo. Override it to trade padding for taller, more dramatic slices
 3. **Choose Fit or Fill**: *Fit* keeps the whole photo and pads the edges; *Fill* crops to edge-to-edge with no bars
 4. **Adjust the Frame** (Fit only): Pick a White, Black, or Blur background and fine-tune the scale
-5. **Check the Seams**: The app already positions tile boundaries over the flattest parts of your photo — slide left or right if you'd rather place them yourself
+5. **Position the Photo**: It starts centred. Slide it left or right to move the tile boundaries, or up and down in Fill mode to pick which band the crop keeps
 6. **Export Tiles**: Save all tiles to your gallery in one tap
-7. **Upload in Order**: In Instagram, tap the tiles **left to right** — they're saved so the gallery grid already shows them in the right order, and numbered `_pano_01_of_04` so you can double-check
+7. **Upload in Order**: In Instagram, tap the tiles **left to right**. They're saved so the gallery grid already shows them in the right order, and numbered `_pano_01_of_04` so you can double-check
 
 *Requires a landscape photo wider than 6:5 and at least 2160px wide. Camera and location metadata isn't preserved in panorama tiles.*
 
@@ -213,7 +211,7 @@ lib/
     └── app_theme.dart      # Color schemes & typography
 ```
 
-*Note: Photo Strip module components (strip_bloc, strip_editor_screen, etc.) are planned, not yet built — see `plans/implementation_plan.md` for the full spec.*
+*Note: Photo Strip module components (strip_bloc, strip_editor_screen, etc.) are planned, not yet built. See `plans/implementation_plan.md` for the full spec.*
 
 ### 🛠️ Key Technologies
 
@@ -226,12 +224,12 @@ lib/
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! Here's how you can help:
+Contributions are welcome.
 
 ### Ways to Contribute
 
-- 🐛 **Bug Reports**: Found a bug? [Open an issue](https://github.com/rishab-ms/instaframe/issues)
-- 💡 **Feature Requests**: Have an idea? [Suggest it](https://github.com/rishab-ms/instaframe/issues)
+- 🐛 **Bug Reports**: Found a bug? [Open an issue](https://github.com/Rishab-ms/InstaFramer/issues)
+- 💡 **Feature Requests**: Have an idea? [Suggest it](https://github.com/Rishab-ms/InstaFramer/issues)
 - 🔧 **Code Contributions**: Fix bugs or add features
 - 📖 **Documentation**: Improve docs or add examples
 - 🧪 **Testing**: Help test on different devices
@@ -274,12 +272,13 @@ We welcome contributions from the community! Here's how you can help:
 - Auto-suggested tile count with manual override
 - Fit (pad with White/Black/Blur) and Fill (edge-to-edge crop) modes
 - Live preview with seam guides and tile numbers
-- Automatic seam placement over low-detail areas, with a manual nudge override
+- Horizontal and vertical position controls, with rule-of-thirds guides on the vertical drag
 - Live quality readout and empty-tile warnings
 - Sequential, order-guaranteed export so the carousel reads correctly
 - Share-intent entry: share one wide photo and pick Frame or Panorama
 - In-framer suggestion when a very wide photo would letterbox badly
 - Separate PanoramaBloc alongside PhotoBloc
+- Background colors sampled from the photo's own palette, alongside White/Black/Blur
 
 ### 🔄 Version 2.0 - Multi-Module Suite (In Development)
 - **Module Selector Screen**: Choose between Framer, Panorama and Photo Strip tools, replacing the home screen's current text-link entry point for Panorama
@@ -293,8 +292,6 @@ We welcome contributions from the community! Here's how you can help:
 
 ### 🚀 Version 2.1 (Future)
 - Custom preset saving for all modules
-- Fine-tuning controls (position alignment)
-- Palette generator for suggested background colors
 - Performance optimizations for Photo Strip
 - **Panorama refinements**: free pan/zoom reframe, per-tile scrub preview, tile overlap, non-4:5 tile ratios, standalone "cover tile"
 
@@ -319,11 +316,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - 📧 **Email**: rishabms80@gmail.com
-- 🐛 **Issues**: [GitHub Issues](https://github.com/rishab-ms/instaframe/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/rishab-ms/instaframe/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/Rishab-ms/InstaFramer/issues)
 
 ---
 
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/rishabms">Rishab Sanjay</a>
+  Made with ❤️ by <a href="https://github.com/Rishab-ms">Rishab Sanjay</a>
 </p>
