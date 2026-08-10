@@ -3,25 +3,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/preferences_bloc/preferences_bloc.dart';
 import '../../blocs/preferences_bloc/preferences_event.dart';
-import '../../models/image_size.dart';
+import '../../models/enums.dart';
 import 'settings_card.dart';
 
 /// Image size preset selector with radio buttons.
-/// 
+///
 /// Displays all available image size presets including:
 /// - Instagram Portrait/Square/Landscape
 /// - High Quality Portrait/Square
 /// - Custom dimensions option
-/// 
+///
 /// Updates PreferencesBloc when selection changes.
 class ImageSizePresetSelector extends StatelessWidget {
   /// The currently selected preset
   final ImageSizePreset currentPreset;
 
-  const ImageSizePresetSelector({
-    super.key,
-    required this.currentPreset,
-  });
+  const ImageSizePresetSelector({super.key, required this.currentPreset});
 
   void _onPresetChanged(BuildContext context, ImageSizePreset preset) {
     context.read<PreferencesBloc>().add(UpdateImageSizePresetEvent(preset));
@@ -36,7 +33,7 @@ class ImageSizePresetSelector extends StatelessWidget {
           final index = entry.key;
           final preset = entry.value;
           final isLast = index == ImageSizePreset.values.length - 1;
-          
+
           return Column(
             children: [
               ListTile(
@@ -63,7 +60,3 @@ class ImageSizePresetSelector extends StatelessWidget {
     );
   }
 }
-
-
-
-

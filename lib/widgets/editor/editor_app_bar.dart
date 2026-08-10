@@ -5,7 +5,9 @@ import '../../screens/preferences_screen.dart';
 /// App bar widget for the editor screen.
 /// Simple constant app bar without BLoC dependencies.
 class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const EditorAppBar({super.key});
+  final String title;
+
+  const EditorAppBar({super.key, required this.title});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -13,7 +15,7 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text('Edit Photos'),
+      title: Text(title),
       actions: [
         // App preferences/settings navigation
         IconButton(

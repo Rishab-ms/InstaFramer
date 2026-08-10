@@ -9,12 +9,12 @@ class PreferencesService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_preferencesKey);
-      
+
       if (jsonString != null) {
         final json = jsonDecode(jsonString) as Map<String, dynamic>;
         return UserPreferences.fromJson(json);
       }
-      
+
       // Return default preferences
       return const UserPreferences();
     } catch (e) {
@@ -42,4 +42,3 @@ class PreferencesService {
     }
   }
 }
-

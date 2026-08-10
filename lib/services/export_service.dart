@@ -4,6 +4,9 @@ import 'dart:typed_data';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gal/gal.dart';
+import '../models/enums.dart';
+import '../models/panorama_export_progress.dart';
+import '../models/panorama_settings.dart';
 import '../models/photo_settings.dart';
 import 'image_processor.dart';
 
@@ -11,11 +14,11 @@ class ExportService {
   final ImageProcessor _imageProcessor;
 
   ExportService({ImageProcessor? imageProcessor})
-      : _imageProcessor = imageProcessor ?? ImageProcessor();
+    : _imageProcessor = imageProcessor ?? ImageProcessor();
 
   int _calculateAdaptiveBatchSize() {
     // 3 is a safe balance for typical 12MP images on modern phones.
-    return 3; 
+    return 3;
   }
 
   Stream<int> exportPhotos({
@@ -32,7 +35,11 @@ class ExportService {
     try {
       final batchSize = _calculateAdaptiveBatchSize();
 
-      for (var batchStart = 0; batchStart < photos.length; batchStart += batchSize) {
+      for (
+        var batchStart = 0;
+        batchStart < photos.length;
+        batchStart += batchSize
+      ) {
         final batchEnd = (batchStart + batchSize).clamp(0, photos.length);
         final batch = photos.sublist(batchStart, batchEnd);
 
@@ -55,22 +62,25 @@ class ExportService {
 
             // Preserve Metadata using the same loaded bytes (No extra I/O)
             if (preserveMetadata) {
-               processedBytes = _preserveMetadata(originBytes, processedBytes);
+              processedBytes = _preserveMetadata(originBytes, processedBytes);
             }
 
             // Save Logic
             final originalName = asset.title ?? 'photo_${globalIndex + 1}';
-            final baseName = originalName.replaceAll(RegExp(r'\.(jpg|jpeg|png)$', caseSensitive: false), '');
+            final baseName = originalName.replaceAll(
+              RegExp(r'\.(jpg|jpeg|png)$', caseSensitive: false),
+              '',
+            );
             final exportFileName = '${baseName}_instaframe.jpg';
             final tempFile = File('${exportDir.path}/$exportFileName');
-            
+
             await tempFile.writeAsBytes(processedBytes);
             await Gal.putImage(tempFile.path);
             await tempFile.delete();
 
             // GC Hint: clear reference to huge arrays immediately
-            processedBytes = null; 
-            
+            processedBytes = null;
+
             return globalIndex + 1;
           } finally {
             // GC Hint: clear input bytes immediately
@@ -93,10 +103,87 @@ class ExportService {
     }
   }
 
-  /// Synchronous implementation if bytes are already loaded. 
-  /// The logic is fast enough to run on the compute thread or main thread 
+  /// Renders [source] into a panorama canvas and saves it as [PanoramaSettings.tileCount]
+  /// separate tiles.
+  ///
+  /// Different from [exportPhotos] in every dimension that matters — one
+  /// source photo in, N tiles out; strictly **sequential** writes instead of
+  /// concurrent batches; no `preserveMetadata` (see `ImageProcessor.processPanorama`
+  /// for why panorama tiles carry no EXIF) — so this is a separate method
+  /// rather than four boolean flags bolted onto `exportPhotos`.
+  Stream<PanoramaExportProgress> exportPanorama({
+    required AssetEntity source,
+    required PanoramaSettings settings,
+  }) async* {
+    final tempDir = await getTemporaryDirectory();
+    final exportDir = Directory('${tempDir.path}/instaframe_export');
+    if (!await exportDir.exists()) await exportDir.create(recursive: true);
+
+    try {
+      yield PanoramaExportProgress(
+        phase: PanoramaExportPhase.rendering,
+        saved: 0,
+        total: settings.tileCount,
+      );
+
+      final originBytes = await source.originBytes;
+      if (originBytes == null) throw Exception('Failed to load image bytes');
+
+      final tiles = await _imageProcessor.processPanorama(
+        originBytes,
+        settings,
+      );
+      final n = tiles.length;
+
+      final originalName = source.title ?? 'panorama';
+      final baseName = originalName.replaceAll(
+        RegExp(r'\.(jpg|jpeg|png)$', caseSensitive: false),
+        '',
+      );
+
+      // Reverse iteration is deliberate — Instagram's picker sorts newest
+      // first and numbers carousel slides by tap order, so saving 1..N would
+      // land tile N (the newest) top-left and tapping left-to-right would
+      // play the panorama backwards. Saving N..1 makes tile 1 the newest, so
+      // the grid reads left-to-right correctly. Do not "fix" this to a
+      // forward loop. Tile numbering in the filename stays 1..N.
+      //
+      // No Future.wait/batching either — each tile must be fully committed
+      // to MediaStore (via Gal.putImage) before the next is written, so
+      // _id/date_added increase monotonically and the picker can't scramble
+      // the order.
+      for (var i = n - 1; i >= 0; i--) {
+        final seq = (i + 1).toString().padLeft(2, '0');
+        final file = File(
+          '${exportDir.path}/${baseName}_pano_${seq}_of_$n.jpg',
+        );
+        await file.writeAsBytes(tiles[i]);
+        await Gal.putImage(file.path);
+        await file.delete();
+
+        // saved counts forward even though the loop runs backwards, so the
+        // UI always shows "Saving tile 1 of N -> N of N" — never surface the
+        // internal save order.
+        yield PanoramaExportProgress(
+          phase: PanoramaExportPhase.saving,
+          saved: n - i,
+          total: n,
+        );
+      }
+    } finally {
+      if (await exportDir.exists()) {
+        await exportDir.delete(recursive: true);
+      }
+    }
+  }
+
+  /// Synchronous implementation if bytes are already loaded.
+  /// The logic is fast enough to run on the compute thread or main thread
   /// without being async since it's just array manipulation.
-  Uint8List _preserveMetadata(Uint8List originalBytes, Uint8List processedBytes) {
+  Uint8List _preserveMetadata(
+    Uint8List originalBytes,
+    Uint8List processedBytes,
+  ) {
     try {
       if (originalBytes.length < 4) return processedBytes;
 
@@ -118,30 +205,30 @@ class ExportService {
     while (offset < jpegBytes.length - 4) {
       //look for EXIF APP1 marker (0xFFE1)
       if (jpegBytes[offset] == 0xFF && jpegBytes[offset + 1] == 0xE1) {
-        
         final length = (jpegBytes[offset + 2] << 8) | jpegBytes[offset + 3];
         // Check for "Exif" header
         if (offset + 8 < jpegBytes.length &&
-            jpegBytes[offset + 4] == 0x45 &&  // 'E'
-            jpegBytes[offset + 5] == 0x78 &&  // 'x'
-            jpegBytes[offset + 6] == 0x69 &&  // 'i'
-            jpegBytes[offset + 7] == 0x66) { // 'f'
-            //found exif segment
+            jpegBytes[offset + 4] == 0x45 && // 'E'
+            jpegBytes[offset + 5] == 0x78 && // 'x'
+            jpegBytes[offset + 6] == 0x69 && // 'i'
+            jpegBytes[offset + 7] == 0x66) {
+          // 'f'
+          //found exif segment
           return jpegBytes.sublist(offset, offset + 2 + length);
         }
       }
-      
+
       // Navigate next marker
       if (jpegBytes[offset] == 0xFF) {
-         // If it's SOS (Start of Scan), Stop. Exif is always before SOS.
-         if (jpegBytes[offset + 1] == 0xDA) break;
-         
-         if (jpegBytes[offset + 1] != 0x00) {
-            final length = (jpegBytes[offset + 2] << 8) | jpegBytes[offset + 3];
-            offset += 2 + length;
-         } else {
-            offset++;
-         }
+        // If it's SOS (Start of Scan), Stop. Exif is always before SOS.
+        if (jpegBytes[offset + 1] == 0xDA) break;
+
+        if (jpegBytes[offset + 1] != 0x00) {
+          final length = (jpegBytes[offset + 2] << 8) | jpegBytes[offset + 3];
+          offset += 2 + length;
+        } else {
+          offset++;
+        }
       } else {
         offset++;
       }
@@ -151,13 +238,13 @@ class ExportService {
 
   Uint8List _insertExifSegment(Uint8List jpegBytes, Uint8List exifSegment) {
     if (jpegBytes.length < 4) return jpegBytes;
-    
+
     final result = BytesBuilder();
     result.addByte(0xFF);
     result.addByte(0xD8);
     result.add(exifSegment);
     result.add(jpegBytes.sublist(2));
-    
+
     return result.toBytes();
   }
 }

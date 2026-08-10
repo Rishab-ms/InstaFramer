@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/preferences_bloc/preferences_bloc.dart';
 import '../blocs/preferences_bloc/preferences_state.dart';
-import '../models/image_size.dart';
+import '../models/enums.dart';
 import '../services/feedback_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/preferences/app_info_footer.dart';
@@ -24,7 +24,7 @@ import '../widgets/preferences/theme_mode_selector.dart';
 /// - Feedback email composition with auto-populated device info
 ///
 /// All settings are persisted to SharedPreferences and take effect immediately.
-/// 
+///
 /// This screen uses reusable widget components for maintainability and consistency.
 class PreferencesScreen extends StatefulWidget {
   const PreferencesScreen({super.key});
@@ -35,11 +35,11 @@ class PreferencesScreen extends StatefulWidget {
 
 class _PreferencesScreenState extends State<PreferencesScreen> {
   final FeedbackService _feedbackService = FeedbackService();
-  
+
   // Controllers for custom image size inputs
   final TextEditingController _widthController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
-  
+
   @override
   void dispose() {
     _widthController.dispose();
@@ -59,32 +59,29 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: const Text('Settings'), centerTitle: false),
       body: BlocBuilder<PreferencesBloc, PreferencesState>(
         builder: (context, state) {
           // Loading state
           if (state is PreferencesLoadingState) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           // Error state
           if (state is PreferencesErrorState) {
             return ErrorStateView(message: state.message);
           }
-          
+
           // Empty state (shouldn't happen but handle gracefully)
           if (state is! PreferencesLoadedState) {
             return const SizedBox.shrink();
           }
-          
+
           final preferences = state.preferences;
-          
+
           // Sync controllers with current preferences
           _syncControllersWithState(state);
-          
+
           return _buildSettingsList(context, state, preferences);
         },
       ),
@@ -104,30 +101,30 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         const SettingsSectionHeader(title: 'Appearance'),
         ThemeModeSelector(currentMode: preferences.themeMode),
         const Divider(height: AppTheme.spacingLarge * 2),
-        
+
         // Export Quality Section
         const SettingsSectionHeader(title: 'Export Quality'),
         QualitySliderCard(currentQuality: preferences.imageQuality),
         PreserveMetadataSwitch(preserveMetadata: preferences.preserveMetadata),
         const Divider(height: AppTheme.spacingLarge * 2),
-        
+
         // Export Size Section
         const SettingsSectionHeader(title: 'Export Size'),
         ImageSizePresetSelector(currentPreset: preferences.imageSizePreset),
-        
+
         // Custom size input (conditionally shown)
         if (preferences.imageSizePreset == ImageSizePreset.custom)
           CustomSizeInputCard(
             widthController: _widthController,
             heightController: _heightController,
           ),
-        
+
         const Divider(height: AppTheme.spacingLarge * 2),
-        
+
         // Support Section
         const SettingsSectionHeader(title: 'Support'),
         FeedbackTile(feedbackService: _feedbackService),
-        
+
         // App Info Footer
         const SizedBox(height: AppTheme.spacingXLarge),
         const AppInfoFooter(),

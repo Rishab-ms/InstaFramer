@@ -1,10 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:photo_manager/photo_manager.dart';
-import '../../models/background_type.dart';
+import '../../models/enums.dart';
 import '../../models/photo_settings.dart';
 
 /// Base class for all photo-related states.
-/// 
+///
 /// All PhotoBloc states extend this class and follow the naming convention
 /// of ending with "State" for clarity.
 abstract class PhotoState extends Equatable {
@@ -15,14 +15,14 @@ abstract class PhotoState extends Equatable {
 }
 
 /// Initial state before any photos are selected.
-/// 
+///
 /// This is the default state when the app starts or after [ClearPhotosEvent].
 class PhotoInitialState extends PhotoState {
   const PhotoInitialState();
 }
 
 /// Loading state while photo picker is active.
-/// 
+///
 /// Transitions to this state when [LoadPhotosFromGalleryEvent] is dispatched.
 /// Shows loading indicator in UI until [PhotosSelectedEvent] completes.
 class PhotosLoadingState extends PhotoState {
@@ -30,7 +30,7 @@ class PhotosLoadingState extends PhotoState {
 }
 
 /// Main editing state when photos are loaded and ready for editing.
-/// 
+///
 /// Contains:
 /// - [photos]: List of selected AssetEntity objects (1-30 photos)
 /// - [settings]: Current PhotoSettings (aspect ratio, scale, background)
@@ -65,7 +65,7 @@ class PhotosLoadedState extends PhotoState {
 }
 
 /// Processing state during batch export.
-/// 
+///
 /// Emitted during [ExportAllPhotosEvent] to show export progress.
 /// [progress] is automatically calculated as current/total (0.0 to 1.0).
 class PhotosProcessingState extends PhotoState {
@@ -82,13 +82,12 @@ class PhotosProcessingState extends PhotoState {
     required this.photos,
   }) : progress = current / total;
 
-
   @override
   List<Object?> get props => [current, total, progress, backgroundType, photos];
 }
 
 /// Success state after all photos are exported.
-/// 
+///
 /// Shows completion message with [count] of exported photos.
 /// Automatically transitions back to [PhotosLoadedState] after 2 seconds.
 class PhotosExportedState extends PhotoState {
@@ -100,8 +99,26 @@ class PhotosExportedState extends PhotoState {
   List<Object?> get props => [count];
 }
 
+/// Decision-required state for a fresh single-photo share that's eligible
+/// for the panorama flow.
+///
+/// The share path has no UI in the loop before `PhotoBloc` reacts, so this
+/// state exists to pause the merge and let `CreateModeDialog` ask "Framed
+/// Photo or Panorama Carousel?" instead of assuming Framed Photo. Only
+/// reached for a *fresh* single share (no editor session already in
+/// flight) that also passes `PanoramaSpec.evaluate` — see
+/// `_onExternalMediaShared`.
+class SharedPhotoModeSelectionState extends PhotoState {
+  final AssetEntity photo;
+
+  const SharedPhotoModeSelectionState(this.photo);
+
+  @override
+  List<Object?> get props => [photo];
+}
+
 /// Error state when something goes wrong.
-/// 
+///
 /// Contains error [message] to display to user.
 /// Can occur during photo selection, processing, or export.
 class PhotoErrorState extends PhotoState {
@@ -112,4 +129,3 @@ class PhotoErrorState extends PhotoState {
   @override
   List<Object?> get props => [message];
 }
-

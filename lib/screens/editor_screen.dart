@@ -7,10 +7,14 @@ import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_event.dart';
 import '../blocs/photo_bloc/photo_state.dart';
 import '../models/aspect_ratio.dart' as models;
-import '../models/background_type.dart';
+import '../models/enums.dart';
+import '../models/panorama_spec.dart';
 import '../services/image_processor.dart';
+import '../widgets/editor/control_button.dart';
 import '../widgets/editor/editor_app_bar.dart';
 import '../widgets/editor/export_button.dart';
+import '../widgets/editor/labeled_slider.dart';
+import '../widgets/editor/panorama_suggestion_banner.dart';
 import '../widgets/editor/photo_carousel.dart';
 
 /// Editor screen - displays carousel of photos with editing controls.
@@ -129,7 +133,7 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (context, state) {
         // Handle different states
         if (state is PhotosProcessingState) {
-          return _buildProcessingView(state,);
+          return _buildProcessingView(state);
         }
 
         if (state is PhotosLoadedState) {
@@ -220,7 +224,7 @@ class _EditorScreenState extends State<EditorScreen> {
       },
       child: Scaffold(
         backgroundColor: theme.colorScheme.surface,
-        appBar: const EditorAppBar(),
+        appBar: const EditorAppBar(title: 'Edit Photos'),
         body: Column(
           children: [
             // Photo counter above carousel
@@ -261,6 +265,21 @@ class _EditorScreenState extends State<EditorScreen> {
                 ),
               ),
             ),
+
+            // Panorama discovery path — only when a single wide-enough
+            // photo is loaded, since that's the framer result the banner is
+            // steering people away from. Keyed by photo id so a different
+            // single photo gets a fresh, un-dismissed banner.
+            if (state.photos.length == 1 &&
+                PanoramaSpec.evaluate(
+                  sourceWidth: state.photos.first.orientatedWidth,
+                  sourceHeight: state.photos.first.orientatedHeight,
+                  tileRatio: PanoramaTileRatio.portrait.ratio,
+                ).isEligible)
+              PanoramaSuggestionBanner(
+                key: ValueKey(state.photos.first.id),
+                photo: state.photos.first,
+              ),
 
             // Quick controls with aspect ratio and backgrounds
             _buildQuickControls(context, settings),
@@ -308,8 +327,7 @@ class _EditorScreenState extends State<EditorScreen> {
                     ...models.AspectRatios.all.map((ratio) {
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
-                        child: _buildControlButton(
-                          context,
+                        child: ControlButton(
                           icon: _getIconForAspectRatio(ratio.iconName),
                           label: ratio.label,
                           isSelected: settings.aspectRatio.id == ratio.id,
@@ -336,8 +354,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 child: Row(
                   children: [
                     // Background type selector
-                    _buildControlButton(
-                      context,
+                    ControlButton(
                       icon: Icons.wb_sunny_outlined,
                       label: 'White',
                       isSelected:
@@ -349,8 +366,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       },
                     ),
                     const SizedBox(width: 8),
-                    _buildControlButton(
-                      context,
+                    ControlButton(
                       icon: Icons.nightlight_outlined,
                       label: 'Black',
                       isSelected:
@@ -362,8 +378,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       },
                     ),
                     const SizedBox(width: 8),
-                    _buildControlButton(
-                      context,
+                    ControlButton(
                       icon: Icons.blur_on,
                       label: 'Blur',
                       isSelected:
@@ -402,57 +417,6 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  /// Build a control button with icon and label.
-  Widget _buildControlButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primaryContainer
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? theme.colorScheme.primary : theme.dividerColor,
-            width: 2,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected
-                  ? theme.colorScheme.onPrimaryContainer
-                  : theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: isSelected
-                    ? theme.colorScheme.onPrimaryContainer
-                    : theme.colorScheme.onSurfaceVariant,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Build expanded settings panel with scale slider.
   Widget _buildScaleSlider(BuildContext context, dynamic settings) {
     final theme = Theme.of(context);
@@ -463,41 +427,17 @@ class _EditorScreenState extends State<EditorScreen> {
         color: theme.colorScheme.surfaceContainer,
         border: Border(top: BorderSide(color: theme.dividerColor, width: 1)),
       ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.zoom_out,
-            size: 20,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Slider(
-              value: settings.scale,
-              min: 0.5,
-              max: 1.0,
-              year2023: false,
-              divisions: 50,
-              label: '${(settings.scale * 100).toInt()}%',
-              onChanged: (value) {
-                context.read<PhotoBloc>().add(UpdateScaleEvent(value));
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.zoom_in,
-            size: 20,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            '${(settings.scale * 100).toInt()}%',
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+      child: LabeledSlider(
+        leadingIcon: Icons.zoom_out,
+        trailingIcon: Icons.zoom_in,
+        value: settings.scale,
+        min: 0.5,
+        max: 1.0,
+        divisions: 50,
+        valueLabel: '${(settings.scale * 100).toInt()}%',
+        onChanged: (value) {
+          context.read<PhotoBloc>().add(UpdateScaleEvent(value));
+        },
       ),
     );
   }
@@ -512,60 +452,29 @@ class _EditorScreenState extends State<EditorScreen> {
         color: theme.colorScheme.primaryContainer.withOpacity(0.3),
         border: Border(top: BorderSide(color: theme.dividerColor, width: 1)),
       ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.blur_circular,
-            size: 20,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Slider(
-              value: settings.blurIntensity.toDouble(),
-              min: 1,
-              max: 100,
-              year2023: false,
-              divisions: 4, // 5 divisions total
-              label: '${settings.blurIntensity}',
-              onChanged: (value) {
-                context.read<PhotoBloc>().add(
-                  UpdateBlurIntensityEvent(value.toInt()),
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.blur_on,
-            size: 20,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 40,
-            child: Text(
-              '${settings.blurIntensity}',
-              style: theme.textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
+      child: LabeledSlider(
+        leadingIcon: Icons.blur_circular,
+        trailingIcon: Icons.blur_on,
+        value: settings.blurIntensity.toDouble(),
+        min: 1,
+        max: 100,
+        divisions: 4, // 5 divisions total
+        valueLabel: '${settings.blurIntensity}',
+        onChanged: (value) {
+          context.read<PhotoBloc>().add(
+            UpdateBlurIntensityEvent(value.toInt()),
+          );
+        },
       ),
     );
   }
 
   /// Build processing view during export.
-  Widget _buildProcessingView(
-    PhotosProcessingState state,
-    
-  ) {
+  Widget _buildProcessingView(PhotosProcessingState state) {
     final theme = Theme.of(context);
     // Calculate which photo to show (safe clamp)
-  final photoIndex = state.current.clamp(0, state.photos.length - 1);
-  final currentPhoto = state.photos[photoIndex];
+    final photoIndex = state.current.clamp(0, state.photos.length - 1);
+    final currentPhoto = state.photos[photoIndex];
     return PopScope(
       canPop: false,
       child: Scaffold(

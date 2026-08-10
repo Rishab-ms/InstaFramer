@@ -1,24 +1,24 @@
 /// Aspect ratio data model for photo framing.
-/// 
+///
 /// Represents an aspect ratio with its mathematical value, display information,
 /// and UI presentation details. This model allows for easy addition of new
 /// aspect ratios without modifying UI code.
 class AspectRatio {
   /// Unique identifier for this aspect ratio
   final String id;
-  
+
   /// Mathematical ratio value (width / height)
   final double ratio;
-  
+
   /// Display name shown in UI (e.g., "4:5 Portrait")
   final String displayName;
-  
+
   /// Short label for compact UI (e.g., "4:5")
   final String label;
-  
+
   /// Icon to represent this aspect ratio
   final String iconName;
-  
+
   /// Description for tooltips or help text
   final String? description;
 
@@ -43,7 +43,7 @@ class AspectRatio {
 }
 
 /// Predefined aspect ratios available in the app.
-/// 
+///
 /// Add new aspect ratios here to make them available throughout the app.
 /// The UI will automatically generate buttons for all ratios in this list.
 class AspectRatios {
@@ -110,7 +110,7 @@ class AspectRatios {
   );
 
   /// List of all available aspect ratios.
-  /// 
+  ///
   /// **To add a new aspect ratio:**
   /// 1. Define it as a static const above
   /// 2. Add it to this list

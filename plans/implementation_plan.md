@@ -1,5 +1,63 @@
 # Instagram Photo Framer - V1.0 MVP Implementation Plan
 
+## 📑 Table of Contents
+
+> **How this file is organised.** The first half ([Architecture Overview](#architecture-overview) → [Testing Checklist](#testing-checklist)) is the **design spec** — the V1.0 plan and the rules the codebase follows. The second half ([Git Commits Log](#git-commits-log) onward) is an **append-only changelog**, one entry per shipped batch, newest at the bottom.
+>
+> **Working on something now?** The panorama-carousel spec moved to [`plans/panorama_module.md`](panorama_module.md) — the only unbuilt spec, now in its own file. Related: [`plans/color_picking.md`](color_picking.md). **Writing new code?** Read [📋 Development Rules](#-development-rules-open-source-project) first.
+
+**Design Spec**
+
+- [Architecture Overview](#architecture-overview)
+- [Core Components](#core-components)
+  - [1. Project Setup & Dependencies](#1-project-setup--dependencies)
+  - [2. BLoC State Management Architecture](#2-bloc-state-management-architecture)
+  - [3. Gallery Picker Integration](#3-gallery-picker-integration)
+  - [4. Main Editor Screen](#4-main-editor-screen)
+  - [5. Image Processing Engine](#5-image-processing-engine)
+  - [6. Live Preview Widget](#6-live-preview-widget)
+  - [7. Export Functionality](#7-export-functionality)
+  - [8. Preferences Screen & Settings](#8-preferences-screen--settings)
+  - [9. UI/UX Polish](#9-uiux-polish)
+- [File Structure](#file-structure)
+- [Implementation Order](#implementation-order)
+  - [✅ Completed](#-completed) · [Batch 2](#-completed-batch-2---editor-screen) · [Batch 3](#-completed-batch-3---preferences-screen) · [Batch 4](#-completed-batch-4---editor-enhancements) · [Batch 5](#-completed-batch-5---scalable-aspect-ratio-system)
+  - [✅ COMPLETED - Performance Optimization (V1.1)](#-completed---performance-optimization-v11---production-critical)
+  - [✅ COMPLETED - Viewport-Based Lazy Loading (V1.2)](#-completed---viewport-based-lazy-loading-v12---performance-critical)
+  - [✅ COMPLETED - Default Settings Update](#-completed---default-settings-update)
+  - [🔜 Next Steps](#-next-steps)
+- [Performance Optimization (V1.1) - Production Critical](#performance-optimization-v11---production-critical)
+  - [Identified Performance Issues](#identified-performance-issues)
+  - [Performance Optimization Plan](#performance-optimization-plan)
+  - [Implementation Strategy](#implementation-strategy) · [Performance Targets](#performance-targets) · [Testing Strategy](#testing-strategy)
+- [Key Technical Considerations](#key-technical-considerations)
+- [📋 Development Rules (Open Source Project)](#-development-rules-open-source-project)
+  - [Incremental Development](#incremental-development)
+  - [Documentation Standards (Open Source Ready)](#documentation-standards-open-source-ready)
+  - [BLoC Naming Conventions (for BLoC newcomers)](#bloc-naming-conventions-for-bloc-newcomers)
+- [Testing Checklist](#testing-checklist)
+  - [Core Functionality](#core-functionality) · [Permissions & Error Handling](#permissions--error-handling) · [Settings & Preferences](#settings--preferences) · [Performance](#performance)
+
+**Changelog** — [Git Commits Log](#git-commits-log)
+
+- [Commit 1: Initial Setup (dcbc17e)](#commit-1-initial-setup-dcbc17e)
+- [Batch 1 Commits](#batch-1-commits)
+- [Batch 2: Editor Screen & Performance Optimization](#batch-2--completed---editor-screen--performance-optimization)
+- [Batch 3: Preferences Screen](#batch-3--completed---preferences-screen)
+- [Batch 3 Refactoring: Preferences Screen Component Architecture](#batch-3-refactoring--completed---preferences-screen-component-architecture)
+- [Batch 4: Editor Screen Enhancements & Blur Intensity](#batch-4--completed---editor-screen-enhancements--blur-intensity)
+- [Batch 5: Scalable Aspect Ratio System](#batch-5--completed---scalable-aspect-ratio-system)
+- [Typography Update: Google Sans Font Integration](#typography-update--completed---google-sans-font-integration)
+- [Project Structure Refactoring: Widget Organization](#project-structure-refactoring--completed---widget-organization)
+- [Navigation Loop Bug Fix](#navigation-loop-bug-fix--completed)
+- [UI Polish: Slider Divisions & Export Warnings](#ui-polish---slider-divisions--export-warnings--completed)
+
+**🚧 Panorama Module (V2.0)** — moved to [`plans/panorama_module.md`](panorama_module.md)
+
+**🎨 Color Picking (dominant-photo-color backgrounds)** — planned, see [`plans/color_picking.md`](color_picking.md)
+
+---
+
 ## Architecture Overview
 
 ```mermaid
@@ -1598,3 +1656,11 @@ Do not leave this page during export
 2. Consider extracting more widgets for even better organization
 3. Final testing and release preparation
 
+
+---
+
+### Panorama Module (V2.0) — moved
+
+The panorama-carousel spec (product decisions, architecture, models, image processing, export, smart defaults, UI, entry points, build order, and the implementation checklist) now lives in its own file: **[`plans/panorama_module.md`](panorama_module.md)**.
+
+A related feature — suggesting background colors picked from the photo itself — is planned on top of the panorama editor first; see **[`plans/color_picking.md`](color_picking.md)**.

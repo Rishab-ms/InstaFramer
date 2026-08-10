@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
 /// App information footer widget.
-/// 
+///
 /// Displays:
 /// - App icon
 /// - App name
 /// - Version number
 /// - Tagline
-/// 
+///
 /// Centered layout with subtle styling.
 class AppInfoFooter extends StatelessWidget {
   /// App name to display
   final String appName;
-  
+
   /// Version string to display
   final String version;
-  
+
   /// Optional tagline text
   final String? tagline;
 
@@ -66,4 +66,3 @@ class AppInfoFooter extends StatelessWidget {
     );
   }
 }
-

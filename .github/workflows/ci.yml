@@ -1,0 +1,60 @@
+name: CI
+
+# Builds the release APK on every push and on demand, and hands it back as a
+# downloadable artifact. Deliberately publishes nothing: `release.yml` owns
+# releasing and stays triggered by `v*.*.*` tags alone, so verifying a build
+# never risks putting one in front of the public.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch makes an in-flight run redundant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          # Keep in step with pubspec.yaml's `sdk:` constraint and with
+          # release.yml — a mismatch fails at `pub get`, before compiling.
+          flutter-version: '3.44.5'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # --no-fatal-infos because the tree carries a standing set of
+      # deprecation infos (withOpacity, Radio groupValue, and friends) that
+      # are a real cleanup task but not a reason to block a build. Warnings
+      # and errors still fail the job.
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

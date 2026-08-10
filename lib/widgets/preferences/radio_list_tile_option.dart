@@ -2,25 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// Reusable radio list tile for selectable options.
-/// 
+///
 /// Provides a consistent interface for radio button selections
 /// with icon, title, subtitle, and haptic feedback.
 class RadioListTileOption<T> extends StatelessWidget {
   /// The value this tile represents
   final T value;
-  
+
   /// The currently selected value
   final T groupValue;
-  
+
   /// Callback when the tile is selected
   final ValueChanged<T> onChanged;
-  
+
   /// Icon to display on the left
   final IconData icon;
-  
+
   /// Main title text
   final String title;
-  
+
   /// Subtitle text shown below the title
   final String subtitle;
 
@@ -54,4 +54,3 @@ class RadioListTileOption<T> extends StatelessWidget {
     );
   }
 }
-

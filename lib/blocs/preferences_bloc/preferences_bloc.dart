@@ -4,7 +4,7 @@ import 'preferences_event.dart';
 import 'preferences_state.dart';
 
 /// BLoC for managing user preferences and app settings.
-/// 
+///
 /// Handles:
 /// - Loading and saving preferences from persistent storage
 /// - Theme mode (system/light/dark)
@@ -14,8 +14,8 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
   final PreferencesService _preferencesService;
 
   PreferencesBloc({required PreferencesService preferencesService})
-      : _preferencesService = preferencesService,
-        super(const PreferencesInitialState()) {
+    : _preferencesService = preferencesService,
+      super(const PreferencesInitialState()) {
     on<LoadPreferencesEvent>(_onLoadPreferences);
     on<UpdateThemeModeEvent>(_onUpdateThemeMode);
     on<UpdateImageQualityEvent>(_onUpdateImageQuality);
@@ -146,4 +146,3 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
     }
   }
 }
-

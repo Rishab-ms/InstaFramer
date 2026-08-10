@@ -6,21 +6,18 @@ import 'radio_list_tile_option.dart';
 import 'settings_card.dart';
 
 /// Theme mode selector widget with System/Light/Dark options.
-/// 
+///
 /// Displays three radio button options for theme selection:
 /// - System Default (follows device settings)
 /// - Light Theme
 /// - Dark Theme
-/// 
+///
 /// Updates PreferencesBloc when selection changes.
 class ThemeModeSelector extends StatelessWidget {
   /// The currently selected theme mode
   final ThemeMode currentMode;
 
-  const ThemeModeSelector({
-    super.key,
-    required this.currentMode,
-  });
+  const ThemeModeSelector({super.key, required this.currentMode});
 
   void _onThemeModeChanged(BuildContext context, ThemeMode mode) {
     context.read<PreferencesBloc>().add(UpdateThemeModeEvent(mode));
@@ -62,7 +59,3 @@ class ThemeModeSelector extends StatelessWidget {
     );
   }
 }
-
-
-
-

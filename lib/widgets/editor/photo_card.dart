@@ -2,7 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
-import '../../models/background_type.dart';
+import '../../models/enums.dart';
 import '../../services/image_processor.dart';
 
 /// Individual photo card widget for the carousel.

@@ -86,6 +86,58 @@ class PhotoPickerScreen {
     }
   }
 
+  /// Launch the photo picker for a single photo (the panorama flow).
+  ///
+  /// Same permission handling and error dialogs as [pickPhotos], but limited
+  /// to one asset and **returns** it instead of dispatching to [PhotoBloc] —
+  /// the caller routes the result to `PanoramaBloc`.
+  ///
+  /// [context] - BuildContext to access permissions and show dialogs
+  static Future<AssetEntity?> pickSinglePhoto(BuildContext context) async {
+    try {
+      final hasPermission =
+          await PhotoPermissionService.requestPhotosPermission();
+      if (!hasPermission) {
+        if (context.mounted) {
+          _showPermissionDeniedDialog(context);
+        }
+        return null;
+      }
+
+      final List<AssetEntity>? result = await AssetPicker.pickAssets(
+        context,
+        pickerConfig: AssetPickerConfig(
+          maxAssets: 1,
+          requestType: RequestType.image,
+          selectedAssets: const [],
+          textDelegate: const EnglishAssetPickerTextDelegate(),
+          specialItemPosition: SpecialItemPosition.prepend,
+          specialItemBuilder: (context, path, length) {
+            return _buildCameraButton(context);
+          },
+          themeColor: Theme.of(context).colorScheme.primary,
+          dragToSelect: false,
+          sortPathsByModifiedDate: true,
+        ),
+      );
+
+      if (result != null && result.isNotEmpty) {
+        return result.first;
+      }
+      return null;
+    } on PlatformException catch (e) {
+      if (context.mounted) {
+        _showErrorDialog(context, 'Failed to access photos: ${e.message}');
+      }
+      return null;
+    } catch (e) {
+      if (context.mounted) {
+        _showErrorDialog(context, 'An unexpected error occurred: $e');
+      }
+      return null;
+    }
+  }
+
   /// Build camera button widget for special item position.
   ///
   /// Note: This is a placeholder - actual camera functionality not implemented in V1.

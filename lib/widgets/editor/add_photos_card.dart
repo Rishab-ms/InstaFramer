@@ -8,10 +8,7 @@ class AddPhotosCard extends StatelessWidget {
   /// Callback when the add photos card is tapped
   final VoidCallback onAddPhotos;
 
-  const AddPhotosCard({
-    super.key,
-    required this.onAddPhotos,
-  });
+  const AddPhotosCard({super.key, required this.onAddPhotos});
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +58,3 @@ class AddPhotosCard extends StatelessWidget {
     );
   }
 }
-
-
-

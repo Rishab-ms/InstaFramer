@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 /// App theme configuration using FlexColorScheme for Material 3 design.
 /// Provides beautiful, consistent light and dark themes with a warm amber/sunset palette.
-/// 
+///
 /// Color scheme inspired by natural sunset tones - warm oranges, golden ambers,
 /// and soft peachy hues that create a welcoming, Instagram-ready aesthetic.
 class AppTheme {
@@ -12,7 +12,9 @@ class AppTheme {
 
   // Warm sunset-inspired color palette
   // These colors are extracted from the aesthetic of golden hour photography
-  static const Color _sunsetAmber = Color(0xFFF59E0B); // Primary - warm amber/orange
+  static const Color _sunsetAmber = Color(
+    0xFFF59E0B,
+  ); // Primary - warm amber/orange
   static const Color _goldenHour = Color(0xFFD97706); // Deeper sunset orange
   static const Color _peachy = Color(0xFFFB923C); // Soft peach accent
   // static const Color _warmTaupe = Color(0xFF92400E); // Earthy brown - reserved for future use
@@ -33,34 +35,38 @@ class AppTheme {
       ),
       surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
       blendLevel: 7,
+      appBarStyle: FlexAppBarStyle.scaffoldBackground,
+
       subThemesData: const FlexSubThemesData(
         blendOnLevel: 10,
+
         blendOnColors: false,
         useTextTheme: true,
         useM2StyleDividerInM3: true,
         alignedDropdown: true,
         useInputDecoratorThemeInDialogs: true,
-        
+
         // Button themes with slightly larger radius for modern feel
         elevatedButtonRadius: 12.0,
         filledButtonRadius: 12.0,
         outlinedButtonRadius: 12.0,
         textButtonRadius: 12.0,
-        
+
         // Card and container themes
         cardRadius: 16.0,
         chipRadius: 12.0,
         dialogRadius: 20.0,
-        
+
         // Input decoration
         inputDecoratorRadius: 12.0,
         inputDecoratorUnfocusedBorderIsColored: false,
-        
+
         // AppBar
         appBarScrolledUnderElevation: 4.0,
-        
+
         // Navigation bar
-        navigationBarLabelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        navigationBarLabelBehavior:
+            NavigationDestinationLabelBehavior.alwaysShow,
         navigationBarHeight: 70,
       ),
       visualDensity: FlexColorScheme.comfortablePlatformDensity,
@@ -86,6 +92,7 @@ class AppTheme {
         error: Color(0xFFFFB4AB), // Softer red for dark mode
       ),
       surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
+      appBarStyle: FlexAppBarStyle.scaffoldBackground,
       blendLevel: 13,
       subThemesData: const FlexSubThemesData(
         blendOnLevel: 20,
@@ -93,27 +100,28 @@ class AppTheme {
         useM2StyleDividerInM3: true,
         alignedDropdown: true,
         useInputDecoratorThemeInDialogs: true,
-        
+
         // Button themes
         elevatedButtonRadius: 12.0,
         filledButtonRadius: 12.0,
         outlinedButtonRadius: 12.0,
         textButtonRadius: 12.0,
-        
+
         // Card and container themes
         cardRadius: 16.0,
         chipRadius: 12.0,
         dialogRadius: 20.0,
-        
+
         // Input decoration
         inputDecoratorRadius: 12.0,
         inputDecoratorUnfocusedBorderIsColored: false,
-        
+
         // AppBar
         appBarScrolledUnderElevation: 4.0,
-        
+
         // Navigation bar
-        navigationBarLabelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        navigationBarLabelBehavior:
+            NavigationDestinationLabelBehavior.alwaysShow,
         navigationBarHeight: 70,
       ),
       visualDensity: FlexColorScheme.comfortablePlatformDensity,
@@ -194,4 +202,3 @@ class AppTheme {
   static const double elevationMedium = 4.0;
   static const double elevationHigh = 8.0;
 }
-
