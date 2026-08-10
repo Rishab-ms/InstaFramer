@@ -4,7 +4,7 @@ import '../../models/enums.dart';
 import '../../models/image_size.dart';
 
 /// Base class for all preferences-related events.
-/// 
+///
 /// All PreferencesBloc events extend this class and follow the naming
 /// convention of ending with "Event" for clarity.
 abstract class PreferencesEvent extends Equatable {
@@ -15,7 +15,7 @@ abstract class PreferencesEvent extends Equatable {
 }
 
 /// Event to load user preferences from persistent storage.
-/// 
+///
 /// Dispatched on app start to restore user settings.
 /// If no saved preferences exist, defaults are used.
 class LoadPreferencesEvent extends PreferencesEvent {
@@ -23,7 +23,7 @@ class LoadPreferencesEvent extends PreferencesEvent {
 }
 
 /// Event to update the app theme mode.
-/// 
+///
 /// Options: [ThemeMode.system], [ThemeMode.light], or [ThemeMode.dark].
 /// Change is persisted immediately and updates the UI.
 class UpdateThemeModeEvent extends PreferencesEvent {
@@ -36,7 +36,7 @@ class UpdateThemeModeEvent extends PreferencesEvent {
 }
 
 /// Event to update the JPEG export quality.
-/// 
+///
 /// Quality ranges from 1-100, where 100 is maximum quality.
 /// Default is 85 for optimal size/quality balance.
 class UpdateImageQualityEvent extends PreferencesEvent {
@@ -49,7 +49,7 @@ class UpdateImageQualityEvent extends PreferencesEvent {
 }
 
 /// Event to update the image size preset.
-/// 
+///
 /// Presets include Instagram portrait/square/landscape and high quality variants.
 /// See [ImageSizePreset] enum for all options.
 class UpdateImageSizePresetEvent extends PreferencesEvent {
@@ -62,7 +62,7 @@ class UpdateImageSizePresetEvent extends PreferencesEvent {
 }
 
 /// Event to set a custom image size.
-/// 
+///
 /// Used when user selects "Custom" preset and provides specific dimensions.
 class UpdateCustomImageSizeEvent extends PreferencesEvent {
   final ImageSize size;
@@ -74,7 +74,7 @@ class UpdateCustomImageSizeEvent extends PreferencesEvent {
 }
 
 /// Event to update the last used photo scale.
-/// 
+///
 /// Saves the scale value (0.5-1.0) to remember user's preference for next session.
 class UpdateLastUsedScaleEvent extends PreferencesEvent {
   final double scale;
@@ -109,4 +109,3 @@ class UpdatePreserveMetadataEvent extends PreferencesEvent {
   @override
   List<Object?> get props => [preserveMetadata];
 }
-

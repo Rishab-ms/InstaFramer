@@ -3,14 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 /// Visual seam guides over the panorama canvas — a dashed "cut here" line
-/// with a small scissor icon bookending each seam, plus a centred
-/// tile-number badge per tile.
-///
-/// The dashed-line-and-scissors motif is a deliberate whimsical touch (this
-/// widget could just as easily be a plain solid divider) — it leans into
-/// "cut along the dotted line" as a metaphor for what a seam actually is:
-/// the line Instagram's carousel will visually stitch back together, not a
-/// debug ruler.
+/// at each interior tile boundary.
 ///
 /// Pixel-accurate regardless of fit mode: the tiles are exact equal
 /// fractions of the canvas, so this is an overlay, not derived from the
@@ -18,7 +11,16 @@ import 'package:flutter/material.dart';
 class PanoramaSeamOverlay extends StatelessWidget {
   final int tileCount;
 
-  const PanoramaSeamOverlay({super.key, required this.tileCount});
+  /// Complements the actual background choice (white/black/blur) so the
+  /// seam is legible without needing its own backdrop — see
+  /// `PanoramaPreview._seamColor`.
+  final Color seamColor;
+
+  const PanoramaSeamOverlay({
+    super.key,
+    required this.tileCount,
+    required this.seamColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,23 +39,18 @@ class PanoramaSeamOverlay extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // Tile-number badges, centred in each tile.
-              Row(
-                children: List.generate(tileCount, (i) {
-                  return Expanded(
-                    child: Center(child: _TileBadge(number: i + 1)),
-                  );
-                }),
-              ),
               // Interior seams only — the canvas's own outer edge isn't a
               // seam Instagram will ever show stitched.
               for (var i = 1; i < tileCount; i++)
                 Positioned(
-                  // Centre the dashed line on the seam x-coordinate.
+                  // Centre the seam's own width on the seam x-coordinate.
                   left: tileWidth * i - _DashedSeam.width / 2,
-                  top: 0,
-                  bottom: 0,
-                  child: const _DashedSeam(),
+                  // 4px clear of the canvas's own border so the dashed
+                  // line doesn't touch it, most visible at scale 1.0 where
+                  // the photo fills the canvas edge-to-edge.
+                  top: 4,
+                  bottom: 4,
+                  child: _DashedSeam(color: seamColor),
                 ),
             ],
           );
@@ -63,43 +60,23 @@ class PanoramaSeamOverlay extends StatelessWidget {
   }
 }
 
-/// One dashed vertical seam line with a small scissor icon at each end.
+/// One dashed vertical seam line, tinted to complement the actual
+/// background (see [PanoramaSeamOverlay]) — no backdrop of its own, just a
+/// color chosen to read against what's underneath.
 class _DashedSeam extends StatelessWidget {
   static const double width = 20;
 
-  const _DashedSeam();
+  final Color color;
+
+  const _DashedSeam({required this.color});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      child: Column(
-        children: [
-          // Rotated to "point" down the seam, mirrored at the bottom so the
-          // pair reads as bookends rather than two copies of the same icon.
-          Transform.rotate(
-            angle: math.pi / 2,
-            child: const Icon(
-              Icons.content_cut,
-              size: 14,
-              color: Colors.white70,
-            ),
-          ),
-          Expanded(
-            child: CustomPaint(
-              size: const Size(double.infinity, double.infinity),
-              painter: _DashedLinePainter(),
-            ),
-          ),
-          Transform.rotate(
-            angle: -math.pi / 2,
-            child: const Icon(
-              Icons.content_cut,
-              size: 14,
-              color: Colors.white70,
-            ),
-          ),
-        ],
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _DashedLinePainter(color: color),
       ),
     );
   }
@@ -112,10 +89,14 @@ class _DashedLinePainter extends CustomPainter {
   static const _dashHeight = 4.0;
   static const _dashGap = 4.0;
 
+  final Color color;
+
+  _DashedLinePainter({required this.color});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.85)
+      ..color = color
       ..strokeWidth = 1.5;
 
     final x = size.width / 2;
@@ -130,34 +111,7 @@ class _DashedLinePainter extends CustomPainter {
     }
   }
 
-  // Static dash pattern — never needs to repaint for different reasons than
-  // the parent widget rebuilding, so there's no state to diff here.
   @override
-  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) => false;
-}
-
-/// Small numbered badge identifying a tile, matching the numbering the
-/// export success sheet (Step 3) will use to explain tap order.
-class _TileBadge extends StatelessWidget {
-  final int number;
-
-  const _TileBadge({required this.number});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        '$number',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
+  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) =>
+      color != oldDelegate.color;
 }

@@ -50,6 +50,20 @@ enum ImageSizePreset {
   final ImageSize size;
 }
 
+/// Aspect ratio of each individual carousel tile/slide.
+enum PanoramaTileRatio {
+  /// Instagram's standard portrait post shape — the default.
+  portrait(4 / 5, '4:5'),
+
+  /// Instagram's square post shape.
+  square(1.0, '1:1');
+
+  const PanoramaTileRatio(this.ratio, this.displayName);
+
+  final double ratio;
+  final String displayName;
+}
+
 /// How the source photo is placed into the panorama canvas.
 enum PanoramaFitMode {
   /// Contain-fit, leftover padded with the background. Nothing is cropped —

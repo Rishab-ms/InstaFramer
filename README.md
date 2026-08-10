@@ -29,8 +29,8 @@ InstaFrame is a mobile app that simplifies photo preparation for Instagram creat
 ### 🖼️ **Current: Framer Module**
 The core functionality allows you to select multiple photos and apply consistent Instagram-optimized framing with white, black, or blur backgrounds.
 
-### 🌄 **Coming Soon: Panorama Module (V2.0)**
-A planned feature to split one wide or panoramic photo into several 4:5 tiles that you upload as a carousel — so the shot reads as one continuous panorama when swiped, instead of being posted as a 16:9 or 21:9 image that gets shown tiny in the feed.
+### 🌄 **Panorama Module**
+Split one wide or panoramic photo into several 4:5 tiles that you upload as a carousel — so the shot reads as one continuous panorama when swiped, instead of being posted as a 16:9 or 21:9 image that gets shown tiny in the feed.
 
 ### 🎞️ **Coming Soon: Photo Strip Module (V2.0)**
 A planned feature to transform multiple photos into seamless carousel strips that flow together as one continuous visual story, automatically sliced into Instagram slides.
@@ -52,7 +52,7 @@ A planned feature to transform multiple photos into seamless carousel strips tha
 - **Scale Control**: Precise control over photo sizing (50-100%)
 - **Blur Intensity**: Adjustable blur strength for extended backgrounds
 
-#### 🌄 **Panorama Module (Coming Soon in V2.0)**
+#### 🌄 **Panorama Module**
 - **One Photo, One Carousel**: Slice a single wide shot into 4:5 tiles that swipe together as a continuous panorama
 - **Smart Tile Count**: Suggests the number of tiles that best fits your photo, and lets you override it
 - **Fit or Fill**: *Fit* keeps every pixel and pads the edges with White/Black/Blur; *Fill* crops edge-to-edge for a full-bleed look
@@ -159,8 +159,8 @@ git push origin v1.0.0
 
 *Tip: you can also share photos to InstaFrame from your gallery's share menu instead of picking them in-app.*
 
-### 🌄 **Coming Soon: Panorama Module (V2.0)**
-1. **Start a Panorama**: Tap "Panorama Carousel" on the home screen, or share a single wide photo to InstaFrame and choose "Panorama Carousel" in the popup
+### 🌄 **Panorama Module**
+1. **Start a Panorama**: Tap "Create a Panorama Carousel" on the home screen, or share a single wide photo to InstaFrame and choose "Panorama Carousel" in the popup
 2. **Set the Tile Count**: The app suggests the count that best fits your photo — override it to trade padding for taller, more dramatic slices
 3. **Choose Fit or Fill**: *Fit* keeps the whole photo and pads the edges; *Fill* crops to edge-to-edge with no bars
 4. **Adjust the Frame** (Fit only): Pick a White, Black, or Blur background and fine-tune the scale
@@ -168,7 +168,7 @@ git push origin v1.0.0
 6. **Export Tiles**: Save all tiles to your gallery in one tap
 7. **Upload in Order**: In Instagram, tap the tiles **left to right** — they're saved so the gallery grid already shows them in the right order, and numbered `_pano_01_of_04` so you can double-check
 
-*Requires a landscape photo wider than 6:5 and at least 2160px wide. Camera and location metadata isn't copied to panorama tiles.*
+*Requires a landscape photo wider than 6:5 and at least 2160px wide. Camera and location metadata isn't preserved in panorama tiles.*
 
 ### 🎞️ **Coming Soon: Photo Strip Module (V2.0)**
 A new module that will allow you to:
@@ -185,18 +185,18 @@ InstaFrame follows clean architecture principles with BLoC pattern for state man
 lib/
 ├── blocs/                    # BLoC state management
 │   ├── photo_bloc/          # Photo editing workflow (Framer)
-│   ├── panorama_bloc/       # Panorama split workflow (V2.0)
+│   ├── panorama_bloc/       # Panorama split workflow
 │   └── preferences_bloc/    # App settings & preferences
 ├── models/                  # Data models
 │   ├── aspect_ratio.dart    # Aspect ratio definitions
 │   ├── photo_settings.dart  # Processing settings
-│   ├── panorama_spec.dart   # Panorama constants & eligibility (V2.0)
-│   ├── panorama_settings.dart # Tile count, fit mode, canvas sizing (V2.0)
+│   ├── panorama_spec.dart   # Panorama constants & eligibility
+│   ├── panorama_settings.dart # Tile count, fit mode, canvas sizing
 │   └── user_preferences.dart # App preferences
 ├── screens/                 # UI screens
 │   ├── home_screen.dart     # Landing page
 │   ├── editor_screen.dart   # Main editing interface (Framer)
-│   ├── panorama_editor_screen.dart # Panorama interface (V2.0)
+│   ├── panorama_editor_screen.dart # Panorama interface
 │   ├── photo_picker_screen.dart # Gallery picker
 │   └── preferences_screen.dart  # Settings
 ├── services/                # Business logic
@@ -206,14 +206,14 @@ lib/
 │   └── feedback_service.dart # User feedback system
 ├── widgets/                 # Reusable UI components
 │   ├── editor/             # Editor-specific widgets
-│   ├── panorama/           # Panorama-specific widgets (V2.0)
-│   ├── home/               # Home screen widgets (V2.0)
+│   ├── panorama/           # Panorama-specific widgets
+│   ├── home/               # Home screen widgets
 │   └── preferences/        # Settings widgets
 └── theme/                  # Material 3 theming
     └── app_theme.dart      # Color schemes & typography
 ```
 
-*Note: components marked (V2.0) are planned, not yet built — see `plans/implementation_plan.md` for the full spec. Photo Strip module components (strip_bloc, strip_editor_screen, etc.) will also be added in V2.0*
+*Note: Photo Strip module components (strip_bloc, strip_editor_screen, etc.) are planned, not yet built — see `plans/implementation_plan.md` for the full spec.*
 
 ### 🛠️ Key Technologies
 
@@ -269,23 +269,26 @@ We welcome contributions from the community! Here's how you can help:
 - Share menu import (Android)
 - EXIF metadata preservation
 
+### ✅ Panorama Module (Released)
+- One wide photo → an N-tile 4:5 carousel
+- Auto-suggested tile count with manual override
+- Fit (pad with White/Black/Blur) and Fill (edge-to-edge crop) modes
+- Live preview with seam guides and tile numbers
+- Automatic seam placement over low-detail areas, with a manual nudge override
+- Live quality readout and empty-tile warnings
+- Sequential, order-guaranteed export so the carousel reads correctly
+- Share-intent entry: share one wide photo and pick Frame or Panorama
+- In-framer suggestion when a very wide photo would letterbox badly
+- Separate PanoramaBloc alongside PhotoBloc
+
 ### 🔄 Version 2.0 - Multi-Module Suite (In Development)
-- **Module Selector Screen**: Choose between Framer, Panorama and Photo Strip tools
-- **Panorama Module**: One wide photo → an N-tile 4:5 carousel
-  - Auto-suggested tile count with manual override
-  - Fit (pad with White/Black/Blur) and Fill (edge-to-edge crop) modes
-  - Live preview with seam guides and tile numbers
-  - Automatic seam placement over low-detail areas, with a manual nudge override
-  - Live quality readout and empty-tile warnings
-  - Sequential, order-guaranteed export so the carousel reads correctly
-  - Share-intent entry: share one wide photo and pick Frame or Panorama
-  - In-framer suggestion when a very wide photo would letterbox badly
+- **Module Selector Screen**: Choose between Framer, Panorama and Photo Strip tools, replacing the home screen's current text-link entry point for Panorama
 - **Photo Strip Module**: Seamless carousel creation
   - Height-first algorithm for automatic slide generation
   - Gap and border radius controls
   - Global padding and background options
   - EXIF metadata preservation across slices
-- **Enhanced Architecture**: Separate PanoramaBloc and StripBloc alongside PhotoBloc
+- **Enhanced Architecture**: Separate StripBloc alongside PhotoBloc and PanoramaBloc
 - **Improved Navigation**: Clean module selection flow
 
 ### 🚀 Version 2.1 (Future)
@@ -293,7 +296,7 @@ We welcome contributions from the community! Here's how you can help:
 - Fine-tuning controls (position alignment)
 - Palette generator for suggested background colors
 - Performance optimizations for Photo Strip
-- **Panorama refinements**: seam-nudge slider, free pan/zoom reframe, per-tile scrub preview, tile overlap, non-4:5 tile ratios, standalone "cover tile"
+- **Panorama refinements**: free pan/zoom reframe, per-tile scrub preview, tile overlap, non-4:5 tile ratios, standalone "cover tile"
 
 ### 💎 Version 3.0+ (Long-term)
 - Advanced export options (PNG/JPG, quality settings)

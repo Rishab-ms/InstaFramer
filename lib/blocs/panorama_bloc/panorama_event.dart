@@ -1,7 +1,8 @@
+import 'dart:ui' show Color;
+
 import 'package:equatable/equatable.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../../models/enums.dart';
-import '../../models/panorama_settings.dart';
 
 /// Base class for all panorama-related events.
 ///
@@ -67,6 +68,19 @@ class UpdatePanoramaBackgroundTypeEvent extends PanoramaEvent {
   List<Object?> get props => [backgroundType];
 }
 
+/// Event to update the background to a solid color, e.g. one of the photo's
+/// own suggested swatches. Overrides [UpdatePanoramaBackgroundTypeEvent]'s
+/// choice entirely until white/black/blur is picked again — see
+/// `plans/color_picking.md`. Only meaningful in Fit mode.
+class UpdatePanoramaBackgroundColorEvent extends PanoramaEvent {
+  final Color color;
+
+  const UpdatePanoramaBackgroundColorEvent(this.color);
+
+  @override
+  List<Object?> get props => [color];
+}
+
 /// Event to update the blur intensity. Only affects the extendedBlur background.
 class UpdatePanoramaBlurIntensityEvent extends PanoramaEvent {
   final int intensity;
@@ -77,32 +91,55 @@ class UpdatePanoramaBlurIntensityEvent extends PanoramaEvent {
   List<Object?> get props => [intensity];
 }
 
+/// Event to update the per-tile aspect ratio (4:5 portrait or 1:1 square).
+class UpdatePanoramaTileRatioEvent extends PanoramaEvent {
+  final PanoramaTileRatio tileRatio;
+
+  const UpdatePanoramaTileRatioEvent(this.tileRatio);
+
+  @override
+  List<Object?> get props => [tileRatio];
+}
+
+/// Event to update the photo's corner-rounding amount, as a fraction of the
+/// photo's own shorter side (0 = square corners). Only meaningful in Fit
+/// mode — Fill has no background behind the photo for rounded corners to
+/// reveal.
+class UpdatePanoramaCornerRadiusEvent extends PanoramaEvent {
+  final double cornerRadius;
+
+  const UpdatePanoramaCornerRadiusEvent(this.cornerRadius);
+
+  @override
+  List<Object?> get props => [cornerRadius];
+}
+
 /// Event to update the horizontal seam-nudge offset (in tile widths, -0.5..0.5).
 ///
 /// Not enumerated in the plan's nine-event architecture list, but required by
 /// Product Decision 3 ("Seam-nudge IS in V1") and the Step 2 gate, which
 /// requires the seam-nudge slider to reflow correctly alongside tile count,
-/// Fit/Fill and scale. Marks `seamOffsetIsManual` so Step 5's automatic
+/// Fit/Fill and scale. Marks `cropOffsetXIsManual` so Step 5's automatic
 /// seam-placement re-optimization knows to stop touching this value.
-class UpdatePanoramaSeamOffsetEvent extends PanoramaEvent {
-  final double seamOffset;
+class UpdatePanoramaCropOffsetXEvent extends PanoramaEvent {
+  final double cropOffsetX;
 
-  const UpdatePanoramaSeamOffsetEvent(this.seamOffset);
+  const UpdatePanoramaCropOffsetXEvent(this.cropOffsetX);
 
   @override
-  List<Object?> get props => [seamOffset];
+  List<Object?> get props => [cropOffsetX];
 }
 
-/// Clears a manual seam-nudge and lets automatic placement (Step 5) pick the
-/// offset again — the inverse of [UpdatePanoramaSeamOffsetEvent] setting
-/// `seamOffsetIsManual`.
-class ResetPanoramaSeamOffsetEvent extends PanoramaEvent {
-  const ResetPanoramaSeamOffsetEvent();
-}
+/// Moves the photo up or down within the canvas, choosing what Fill's crop
+/// keeps. Separate from [UpdatePanoramaCropOffsetXEvent] because it positions
+/// the crop, not the seams — see `PanoramaSettings.cropOffsetY`.
+class UpdatePanoramaCropOffsetYEvent extends PanoramaEvent {
+  final double cropOffsetY;
 
-/// Resets the zoom/scale slider back to [PanoramaSettings.defaultScale].
-class ResetPanoramaScaleEvent extends PanoramaEvent {
-  const ResetPanoramaScaleEvent();
+  const UpdatePanoramaCropOffsetYEvent(this.cropOffsetY);
+
+  @override
+  List<Object?> get props => [cropOffsetY];
 }
 
 /// Event to trigger panorama export. Wired in Step 3.

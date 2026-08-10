@@ -9,10 +9,23 @@ class LabeledSlider extends StatelessWidget {
   final double value;
   final double min;
   final double max;
-  final int divisions;
+
+  /// Null makes the track continuous. The app's sliders are stepped by
+  /// default — discrete stops read as deliberate settings — but a control
+  /// with magnetic snap points needs free movement between them, or the steps
+  /// and the snap fight each other.
+  final int? divisions;
   final String valueLabel;
-  final ValueChanged<double> onChanged;
+
+  /// Null renders the slider disabled — for controls that exist but have no
+  /// range to move through under the current settings, where hiding the
+  /// control would just make it look like a feature had vanished.
+  final ValueChanged<double>? onChanged;
   final ValueChanged<double>? onChangeEnd;
+
+  /// Fires when a drag begins — for transient affordances that should only be
+  /// on screen while the user is actually adjusting something.
+  final ValueChanged<double>? onChangeStart;
 
   const LabeledSlider({
     super.key,
@@ -25,6 +38,7 @@ class LabeledSlider extends StatelessWidget {
     required this.valueLabel,
     required this.onChanged,
     this.onChangeEnd,
+    this.onChangeStart,
   });
 
   @override
@@ -62,6 +76,7 @@ class LabeledSlider extends StatelessWidget {
               label: valueLabel,
               onChanged: onChanged,
               onChangeEnd: onChangeEnd,
+              onChangeStart: onChangeStart,
             ),
           ),
         ),

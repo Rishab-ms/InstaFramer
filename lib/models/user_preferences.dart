@@ -32,14 +32,14 @@ class UserPreferences extends Equatable {
 
   @override
   List<Object?> get props => [
-        themeMode,
-        imageQuality,
-        imageSizePreset,
-        customImageSize,
-        lastUsedScale,
-        lastUsedBlurIntensity,
-        preserveMetadata,
-      ];
+    themeMode,
+    imageQuality,
+    imageSizePreset,
+    customImageSize,
+    lastUsedScale,
+    lastUsedBlurIntensity,
+    preserveMetadata,
+  ];
 
   UserPreferences copyWith({
     ThemeMode? themeMode,
@@ -56,7 +56,8 @@ class UserPreferences extends Equatable {
       imageSizePreset: imageSizePreset ?? this.imageSizePreset,
       customImageSize: customImageSize ?? this.customImageSize,
       lastUsedScale: lastUsedScale ?? this.lastUsedScale,
-      lastUsedBlurIntensity: lastUsedBlurIntensity ?? this.lastUsedBlurIntensity,
+      lastUsedBlurIntensity:
+          lastUsedBlurIntensity ?? this.lastUsedBlurIntensity,
       preserveMetadata: preserveMetadata ?? this.preserveMetadata,
     );
   }
@@ -84,7 +85,8 @@ class UserPreferences extends Equatable {
     return UserPreferences(
       themeMode: ThemeMode.values[json['themeMode'] as int? ?? 0],
       imageQuality: json['imageQuality'] as int? ?? 85,
-      imageSizePreset: ImageSizePreset.values[json['imageSizePreset'] as int? ?? 0],
+      imageSizePreset:
+          ImageSizePreset.values[json['imageSizePreset'] as int? ?? 0],
       customImageSize: json['customImageSize'] != null
           ? ImageSize.fromJson(json['customImageSize'] as Map<String, dynamic>)
           : const ImageSize(width: 1080, height: 1350),
@@ -94,4 +96,3 @@ class UserPreferences extends Equatable {
     );
   }
 }
-

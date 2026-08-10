@@ -14,11 +14,11 @@ class ExportService {
   final ImageProcessor _imageProcessor;
 
   ExportService({ImageProcessor? imageProcessor})
-      : _imageProcessor = imageProcessor ?? ImageProcessor();
+    : _imageProcessor = imageProcessor ?? ImageProcessor();
 
   int _calculateAdaptiveBatchSize() {
     // 3 is a safe balance for typical 12MP images on modern phones.
-    return 3; 
+    return 3;
   }
 
   Stream<int> exportPhotos({
@@ -35,7 +35,11 @@ class ExportService {
     try {
       final batchSize = _calculateAdaptiveBatchSize();
 
-      for (var batchStart = 0; batchStart < photos.length; batchStart += batchSize) {
+      for (
+        var batchStart = 0;
+        batchStart < photos.length;
+        batchStart += batchSize
+      ) {
         final batchEnd = (batchStart + batchSize).clamp(0, photos.length);
         final batch = photos.sublist(batchStart, batchEnd);
 
@@ -58,22 +62,25 @@ class ExportService {
 
             // Preserve Metadata using the same loaded bytes (No extra I/O)
             if (preserveMetadata) {
-               processedBytes = _preserveMetadata(originBytes, processedBytes);
+              processedBytes = _preserveMetadata(originBytes, processedBytes);
             }
 
             // Save Logic
             final originalName = asset.title ?? 'photo_${globalIndex + 1}';
-            final baseName = originalName.replaceAll(RegExp(r'\.(jpg|jpeg|png)$', caseSensitive: false), '');
+            final baseName = originalName.replaceAll(
+              RegExp(r'\.(jpg|jpeg|png)$', caseSensitive: false),
+              '',
+            );
             final exportFileName = '${baseName}_instaframe.jpg';
             final tempFile = File('${exportDir.path}/$exportFileName');
-            
+
             await tempFile.writeAsBytes(processedBytes);
             await Gal.putImage(tempFile.path);
             await tempFile.delete();
 
             // GC Hint: clear reference to huge arrays immediately
-            processedBytes = null; 
-            
+            processedBytes = null;
+
             return globalIndex + 1;
           } finally {
             // GC Hint: clear input bytes immediately
@@ -171,9 +178,12 @@ class ExportService {
   }
 
   /// Synchronous implementation if bytes are already loaded.
-  /// The logic is fast enough to run on the compute thread or main thread 
+  /// The logic is fast enough to run on the compute thread or main thread
   /// without being async since it's just array manipulation.
-  Uint8List _preserveMetadata(Uint8List originalBytes, Uint8List processedBytes) {
+  Uint8List _preserveMetadata(
+    Uint8List originalBytes,
+    Uint8List processedBytes,
+  ) {
     try {
       if (originalBytes.length < 4) return processedBytes;
 
@@ -195,30 +205,30 @@ class ExportService {
     while (offset < jpegBytes.length - 4) {
       //look for EXIF APP1 marker (0xFFE1)
       if (jpegBytes[offset] == 0xFF && jpegBytes[offset + 1] == 0xE1) {
-        
         final length = (jpegBytes[offset + 2] << 8) | jpegBytes[offset + 3];
         // Check for "Exif" header
         if (offset + 8 < jpegBytes.length &&
-            jpegBytes[offset + 4] == 0x45 &&  // 'E'
-            jpegBytes[offset + 5] == 0x78 &&  // 'x'
-            jpegBytes[offset + 6] == 0x69 &&  // 'i'
-            jpegBytes[offset + 7] == 0x66) { // 'f'
-            //found exif segment
+            jpegBytes[offset + 4] == 0x45 && // 'E'
+            jpegBytes[offset + 5] == 0x78 && // 'x'
+            jpegBytes[offset + 6] == 0x69 && // 'i'
+            jpegBytes[offset + 7] == 0x66) {
+          // 'f'
+          //found exif segment
           return jpegBytes.sublist(offset, offset + 2 + length);
         }
       }
-      
+
       // Navigate next marker
       if (jpegBytes[offset] == 0xFF) {
-         // If it's SOS (Start of Scan), Stop. Exif is always before SOS.
-         if (jpegBytes[offset + 1] == 0xDA) break;
-         
-         if (jpegBytes[offset + 1] != 0x00) {
-            final length = (jpegBytes[offset + 2] << 8) | jpegBytes[offset + 3];
-            offset += 2 + length;
-         } else {
-            offset++;
-         }
+        // If it's SOS (Start of Scan), Stop. Exif is always before SOS.
+        if (jpegBytes[offset + 1] == 0xDA) break;
+
+        if (jpegBytes[offset + 1] != 0x00) {
+          final length = (jpegBytes[offset + 2] << 8) | jpegBytes[offset + 3];
+          offset += 2 + length;
+        } else {
+          offset++;
+        }
       } else {
         offset++;
       }
@@ -228,13 +238,13 @@ class ExportService {
 
   Uint8List _insertExifSegment(Uint8List jpegBytes, Uint8List exifSegment) {
     if (jpegBytes.length < 4) return jpegBytes;
-    
+
     final result = BytesBuilder();
     result.addByte(0xFF);
     result.addByte(0xD8);
     result.add(exifSegment);
     result.add(jpegBytes.sublist(2));
-    
+
     return result.toBytes();
   }
 }

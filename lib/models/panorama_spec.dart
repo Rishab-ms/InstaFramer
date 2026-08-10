@@ -1,8 +1,11 @@
+import 'enums.dart';
+import 'panorama_geometry.dart';
+
 /// Constants and eligibility rules for the panorama carousel.
 ///
-/// N tiles of 4:5 placed side by side form a single canvas of aspect ratio
-/// `N * 0.8`, so panorama is the framer pipeline applied to a derived canvas
-/// ratio plus a slice step.
+/// N tiles of a chosen [PanoramaTileRatio] placed side by side form a single
+/// canvas of aspect ratio `N * tileRatio`, so panorama is the framer
+/// pipeline applied to a derived canvas ratio plus a slice step.
 ///
 /// Takes plain [int] dimensions rather than an `AssetEntity` so the models
 /// layer never imports `photo_manager`. Callers pass the orientation-normalised
@@ -10,7 +13,6 @@
 class PanoramaSpec {
   const PanoramaSpec._();
 
-  static const double tileRatio = 4 / 5; // 0.8
   static const int minTiles = 2;
   static const int maxTilesCap = 10;
   static const double minSourceAspect = 1.2;
@@ -22,16 +24,24 @@ class PanoramaSpec {
   /// cap.
   static const int minTileWidth = 1080;
 
-  /// Aspect ratio of the full canvas that [tileCount] tiles form.
-  static double canvasRatio(int tileCount) => tileCount * tileRatio;
+  /// Aspect ratio of the full canvas that [tileCount] tiles of [tileRatio]
+  /// form.
+  static double canvasRatio(int tileCount, double tileRatio) =>
+      tileCount * tileRatio;
 
   /// Decides whether a source photo can become a panorama carousel.
   ///
   /// Checks run in order and the first failure wins, so the reason surfaced to
-  /// the user is always the most actionable one.
+  /// the user is always the most actionable one. [tileRatio] only feeds
+  /// [PanoramaEligibility.suggestedTiles] — eligibility itself and [maxTiles]
+  /// are shape-independent (a resolution/aspect check and a resolution cap
+  /// respectively), so evaluating once at pick-time (against whatever ratio
+  /// a fresh [PanoramaSettings] starts at) stays valid even if the user
+  /// later switches ratio.
   static PanoramaEligibility evaluate({
     required int sourceWidth,
     required int sourceHeight,
+    required double tileRatio,
   }) {
     if (sourceWidth == 0 || sourceHeight == 0) {
       return const PanoramaEligibility._ineligible(
@@ -55,12 +65,141 @@ class PanoramaSpec {
     }
 
     final maxTiles = (sourceWidth ~/ minTileWidth).clamp(minTiles, maxTilesCap);
-    final suggestedTiles = (aspect / tileRatio).round().clamp(minTiles, maxTiles);
+    final suggestedTiles = (aspect / tileRatio).round().clamp(
+      minTiles,
+      maxTiles,
+    );
 
     return PanoramaEligibility._eligible(
       maxTiles: maxTiles,
       suggestedTiles: suggestedTiles,
     );
+  }
+
+  /// 1-indexed numbers of tiles whose photo coverage is below 50% — see
+  /// Smart Defaults B. Thin wrapper over [PanoramaGeometry], which owns the
+  /// fit/fill placement maths for every caller.
+  static List<int> emptyTiles({
+    required int tileCount,
+    required PanoramaFitMode fitMode,
+    required double scale,
+    required double cropOffsetX,
+    required double sourceAspect,
+    required double canvasRatio,
+  }) {
+    return PanoramaGeometry.resolve(
+      fitMode: fitMode,
+      tileCount: tileCount,
+      scale: scale,
+      cropOffsetX: cropOffsetX,
+      sourceAspect: sourceAspect,
+      canvasRatio: canvasRatio,
+    ).emptyTiles();
+  }
+
+  /// Largest seam nudge (in tile widths) that moves the photo at all, given
+  /// the current framing. Bounds the editor's seam slider so its track maps
+  /// 1:1 onto travel the render will honour — the previous fixed ±0.5 range
+  /// left most of the track inert whenever the photo nearly filled the canvas.
+  static double maxCropOffsetX({
+    required int tileCount,
+    required PanoramaFitMode fitMode,
+    required double scale,
+    required double sourceAspect,
+    required double canvasRatio,
+  }) {
+    return PanoramaGeometry.resolve(
+      fitMode: fitMode,
+      tileCount: tileCount,
+      scale: scale,
+      cropOffsetX: 0,
+      sourceAspect: sourceAspect,
+      canvasRatio: canvasRatio,
+    ).maxCropOffsetX;
+  }
+
+  /// Snaps a raw vertical nudge to centre or to either rule-of-thirds
+  /// alignment when it lands close enough, and returns it unchanged
+  /// otherwise.
+  ///
+  /// Magnetic rather than stepped: the slider stays continuous so fine
+  /// placement is still possible, and only the three positions that mean
+  /// something get a pull. [snapFraction] is the catch radius as a share of
+  /// the full travel — small, because a snap that grabs from far away stops
+  /// feeling like assistance and starts feeling like a control that won't do
+  /// what it's told.
+  static double snapCropOffsetY(
+    double value, {
+    required int tileCount,
+    required PanoramaFitMode fitMode,
+    required double sourceAspect,
+    required double canvasRatio,
+    double snapFraction = 0.06,
+  }) {
+    final geometry = PanoramaGeometry.resolve(
+      fitMode: fitMode,
+      tileCount: tileCount,
+      scale: 1.0,
+      cropOffsetX: 0,
+      sourceAspect: sourceAspect,
+      canvasRatio: canvasRatio,
+    );
+    final maxOffset = geometry.maxCropOffsetY;
+    if (maxOffset <= 0) return 0;
+
+    final thirds = geometry.thirdsCropOffsetY;
+    final radius = maxOffset * snapFraction;
+
+    for (final target in [0.0, thirds, -thirds]) {
+      if ((value - target).abs() <= radius) return target;
+    }
+    return value;
+  }
+
+  /// Largest vertical nudge (in canvas heights) the current framing allows —
+  /// how much of the source Fill's crop is discarding above and below. Always
+  /// 0 in Fit, which crops nothing and stays vertically centred.
+  static double maxCropOffsetY({
+    required int tileCount,
+    required PanoramaFitMode fitMode,
+    required double sourceAspect,
+    required double canvasRatio,
+  }) {
+    return PanoramaGeometry.resolve(
+      fitMode: fitMode,
+      tileCount: tileCount,
+      // Scale only affects Fit's contain-fit size; Fill's crop window doesn't
+      // depend on it, and Fit has no vertical travel either way.
+      scale: 1.0,
+      cropOffsetX: 0,
+      sourceAspect: sourceAspect,
+      canvasRatio: canvasRatio,
+    ).maxCropOffsetY;
+  }
+
+  /// Largest tile count in `[minTiles, maxTiles]` where every tile clears
+  /// the coverage threshold at a **centred** offset. Deliberately ignores
+  /// the current seam-nudge: that slider is a fine-tuning override, not a
+  /// factor in "how many tiles should this be" advice.
+  static int suggestedTileCount({
+    required int maxTiles,
+    required PanoramaFitMode fitMode,
+    required double scale,
+    required double sourceAspect,
+    required double tileRatio,
+  }) {
+    for (var count = maxTiles; count > minTiles; count--) {
+      final empty = emptyTiles(
+        tileCount: count,
+        fitMode: fitMode,
+        scale: scale,
+        cropOffsetX: 0,
+        sourceAspect: sourceAspect,
+        canvasRatio: canvasRatio(count, tileRatio),
+      );
+      if (empty.isEmpty) return count;
+    }
+    return minTiles;
   }
 }
 
@@ -75,13 +214,13 @@ class PanoramaEligibility {
   final int suggestedTiles;
 
   const PanoramaEligibility._ineligible(String this.reason)
-      : isEligible = false,
-        maxTiles = 0,
-        suggestedTiles = 0;
+    : isEligible = false,
+      maxTiles = 0,
+      suggestedTiles = 0;
 
   const PanoramaEligibility._eligible({
     required this.maxTiles,
     required this.suggestedTiles,
-  })  : isEligible = true,
-        reason = null;
+  }) : isEligible = true,
+       reason = null;
 }

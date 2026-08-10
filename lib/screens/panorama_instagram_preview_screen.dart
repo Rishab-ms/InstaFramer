@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import '../models/panorama_settings.dart';
-import '../models/panorama_spec.dart';
 import '../theme/app_theme.dart';
 import '../widgets/panorama/panorama_canvas.dart';
 import '../widgets/panorama/panorama_export_button.dart';
@@ -104,6 +104,7 @@ class _PanoramaInstagramPreviewScreenState
                 children: [
                   _buildPostHeader(theme),
                   Expanded(child: _buildMediaCarousel(tileCount, isDark)),
+                  if (tileCount > 1) _buildDotIndicator(theme, tileCount),
                   _buildPostChrome(context, theme),
                 ],
               ),
@@ -119,19 +120,19 @@ class _PanoramaInstagramPreviewScreenState
   Widget _buildPostHeader(ThemeData theme) {
     final onSurface = theme.colorScheme.onSurface;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 16,
+            radius: 17,
             backgroundColor: theme.colorScheme.primaryContainer,
             child: Icon(
               Icons.person,
-              size: 18,
+              size: 19,
               color: theme.colorScheme.onPrimaryContainer,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Text(
             'yourhandle',
             style: theme.textTheme.titleSmall?.copyWith(
@@ -146,13 +147,15 @@ class _PanoramaInstagramPreviewScreenState
     );
   }
 
-  /// The swipeable 4:5 media area, with a "current/total" pill and a dot
-  /// indicator overlaid directly on the image — matching where Instagram
-  /// actually puts carousel chrome, rather than in the app bar.
+  /// The swipeable 4:5 media area, with a "current/total" pill overlaid
+  /// directly on the image, matching where Instagram actually puts it. The
+  /// dot indicator, unlike the pill, isn't overlaid on real Instagram posts
+  /// — it sits in its own row below the image, above the action icons — so
+  /// it's built separately and placed there instead (see [build]).
   Widget _buildMediaCarousel(int tileCount, bool isDark) {
     return Center(
       child: AspectRatio(
-        aspectRatio: PanoramaSpec.tileRatio,
+        aspectRatio: widget.settings.tileRatio.ratio,
         child: ColoredBox(
           color: isDark ? Colors.black : Colors.white,
           child: Stack(
@@ -164,19 +167,12 @@ class _PanoramaInstagramPreviewScreenState
                 itemBuilder: (context, index) =>
                     _buildTilePage(index, tileCount),
               ),
-              if (tileCount > 1) ...[
+              if (tileCount > 1)
                 Positioned(
                   top: 10,
                   right: 10,
                   child: _buildCounterBadge(tileCount),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 10,
-                  child: _buildDotIndicator(tileCount),
-                ),
-              ],
             ],
           ),
         ),
@@ -202,22 +198,32 @@ class _PanoramaInstagramPreviewScreenState
     );
   }
 
-  Widget _buildDotIndicator(int tileCount) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(tileCount, (i) {
-        final active = i == _page;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.symmetric(horizontal: 2.5),
-          width: 5.5,
-          height: 5.5,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: active ? Colors.white : Colors.white.withValues(alpha: 0.5),
-          ),
-        );
-      }),
+  /// Sits between the media and the action-icon row on its own line, against
+  /// the scaffold background rather than overlaid on the photo — so its dots
+  /// need theme-aware colors instead of the fixed white that worked when
+  /// they sat on top of an image.
+  Widget _buildDotIndicator(ThemeData theme, int tileCount) {
+    final active = theme.colorScheme.onSurface;
+    final inactive = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(tileCount, (i) {
+          final isActive = i == _page;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            margin: const EdgeInsets.symmetric(horizontal: 2.5),
+            width: 5.5,
+            height: 5.5,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive ? active : inactive,
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -225,6 +231,11 @@ class _PanoramaInstagramPreviewScreenState
   /// post — purely illustrative (none of the icons but Export do anything) —
   /// with the actual export action folded into the same surface so it reads
   /// as "the rest of the post" rather than a separate control.
+  ///
+  /// Deliberately down to two text lines (caption, comments link) rather than
+  /// the four a real post shows — "Liked by..." and a timestamp add density
+  /// without telling the user anything about *their* carousel, so they're
+  /// dropped in favor of more breathing room around what's left.
   Widget _buildPostChrome(BuildContext context, ThemeData theme) {
     final onSurface = theme.colorScheme.onSurface;
     final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
@@ -237,33 +248,23 @@ class _PanoramaInstagramPreviewScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
             child: Row(
               children: [
-                Icon(Icons.favorite_border, color: onSurface),
-                const SizedBox(width: 14),
-                Icon(Icons.chat_bubble_outline, color: onSurface),
-                const SizedBox(width: 14),
-                Icon(Icons.send_outlined, color: onSurface),
-                const SizedBox(width: 14),
-                Icon(Icons.repeat_rounded, color: onSurface),
+                Icon(LucideIcons.heart, color: onSurface, size: 24),
+                const SizedBox(width: 16),
+                Icon(LucideIcons.messageCircle, color: onSurface, size: 24),
+                const SizedBox(width: 16),
+                Icon(LucideIcons.send, color: onSurface, size: 24),
+                const SizedBox(width: 16),
+                Icon(LucideIcons.repeat, color: onSurface, size: 22),
                 const Spacer(),
-                Icon(Icons.bookmark_border, color: onSurface),
+                Icon(LucideIcons.bookmark, color: onSurface, size: 24),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-            child: Text(
-              'Liked by yourhandle and others',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: onSurface,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
             child: RichText(
               text: TextSpan(
                 style: theme.textTheme.bodyMedium?.copyWith(color: onSurface),
@@ -278,7 +279,7 @@ class _PanoramaInstagramPreviewScreenState
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+            padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
             child: Text(
               'View all 12 comments',
               style: theme.textTheme.bodySmall?.copyWith(
@@ -287,17 +288,7 @@ class _PanoramaInstagramPreviewScreenState
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-            child: Text(
-              'JUST NOW',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
             child: PanoramaExportButton(
               tileCount: widget.settings.tileCount,
               onExport: () => Navigator.of(context).pop(),
@@ -334,6 +325,9 @@ class _PanoramaInstagramPreviewScreenState
                 child: PanoramaCanvas(
                   source: widget.source,
                   settings: widget.settings,
+                  sourceAspect:
+                      widget.source.orientatedWidth /
+                      widget.source.orientatedHeight,
                 ),
               ),
             ),

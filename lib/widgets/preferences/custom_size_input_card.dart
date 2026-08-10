@@ -8,7 +8,7 @@ import '../../theme/app_theme.dart';
 import 'settings_card.dart';
 
 /// Custom image size input card for width and height entry.
-/// 
+///
 /// Provides two text fields for entering custom dimensions:
 /// - Width input (digits only)
 /// - Height input (digits only)
@@ -17,7 +17,7 @@ import 'settings_card.dart';
 class CustomSizeInputCard extends StatelessWidget {
   /// Controller for width input
   final TextEditingController widthController;
-  
+
   /// Controller for height input
   final TextEditingController heightController;
 
@@ -30,12 +30,10 @@ class CustomSizeInputCard extends StatelessWidget {
   void _onDimensionChanged(BuildContext context) {
     final width = int.tryParse(widthController.text);
     final height = int.tryParse(heightController.text);
-    
+
     if (width != null && width > 0 && height != null && height > 0) {
       context.read<PreferencesBloc>().add(
-        UpdateCustomImageSizeEvent(
-          ImageSize(width: width, height: height),
-        ),
+        UpdateCustomImageSizeEvent(ImageSize(width: width, height: height)),
       );
     }
   }
@@ -59,13 +57,13 @@ class CustomSizeInputCard extends StatelessWidget {
               // Title
               Text(
                 'Custom Dimensions',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
-              
+
               const SizedBox(height: AppTheme.spacingMedium),
-              
+
               // Width and Height inputs
               Row(
                 children: [
@@ -100,9 +98,9 @@ class CustomSizeInputCard extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: AppTheme.spacingSmall),
-              
+
               // Guidance text
               Text(
                 'Recommended: 1080-4000px for optimal Instagram quality',
@@ -117,7 +115,3 @@ class CustomSizeInputCard extends StatelessWidget {
     );
   }
 }
-
-
-
-

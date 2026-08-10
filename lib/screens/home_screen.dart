@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../blocs/panorama_bloc/panorama_bloc.dart';
 import '../blocs/panorama_bloc/panorama_event.dart';
 import '../blocs/panorama_bloc/panorama_state.dart';
@@ -7,6 +8,7 @@ import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/home/create_mode_dialog.dart';
+import '../widgets/home/framer_logo_icon.dart';
 import 'editor_screen.dart';
 import 'panorama_editor_screen.dart';
 import 'photo_picker_screen.dart';
@@ -31,7 +33,7 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(LucideIcons.settings),
             tooltip: 'Settings',
             onPressed: () {
               Navigator.push(
@@ -157,16 +159,20 @@ class HomeScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(AppTheme.spacingLarge),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // App Logo/Icon
-                    Icon(
-                      Icons.photo_size_select_large_rounded,
-                      size: 120,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
                     const SizedBox(height: AppTheme.spacingLarge),
+
+                    // App Logo/Icon — sized down from a full-screen hero to
+                    // something a returning user's eye can skip past quickly
+                    // on the way to the buttons below.
+                    Center(
+                      child: FramerLogoIcon(
+                        size: 64,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spacingMedium),
 
                     // App Title
                     Text(
@@ -176,7 +182,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: AppTheme.spacingSmall),
+                    const SizedBox(height: AppTheme.spacingXSmall),
 
                     // App Description
                     Text(
@@ -186,30 +192,39 @@ class HomeScreen extends StatelessWidget {
                       ),
                       textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: AppTheme.spacingLarge),
+
+                    // Feature strip — one compact row instead of three full
+                    // icon+title+description rows, so returning users scan
+                    // past it in a glance rather than reading three lines of
+                    // onboarding copy on every open.
+                    const Row(
+                      children: [
+                        Expanded(
+                          child: _FeatureChip(
+                            icon: LucideIcons.ratio,
+                            label: 'Aspect ratios',
+                          ),
+                        ),
+                        Expanded(
+                          child: _FeatureChip(
+                            icon: LucideIcons.palette,
+                            label: 'Backgrounds',
+                          ),
+                        ),
+                        Expanded(
+                          child: _FeatureChip(
+                            icon: LucideIcons.galleryHorizontalEnd,
+                            label: 'Panoramas',
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: AppTheme.spacingXLarge),
 
-                    // Features List
-                    _FeatureItem(
-                      icon: Icons.aspect_ratio,
-                      title: 'Custom Aspect Ratios',
-                      description: 'Perfect 4:5 portrait or 1:1 square frames',
-                    ),
-                    const SizedBox(height: AppTheme.spacingMedium),
-                    _FeatureItem(
-                      icon: Icons.palette_outlined,
-                      title: 'Beautiful Backgrounds',
-                      description: 'White, black, or extended blur effects',
-                    ),
-                    const SizedBox(height: AppTheme.spacingMedium),
-                    _FeatureItem(
-                      icon: Icons.panorama_horizontal_outlined,
-                      title: 'Panorama Carousels',
-                      description:
-                          'Split wide photos into an Instagram carousel',
-                    ),
-                    const SizedBox(height: AppTheme.spacingXLarge),
-
-                    // Select Photos Button
+                    // Select Photos Button — the primary action; this is the
+                    // main framing workflow, so it carries all the visual
+                    // weight (filled, full-size).
                     if (state is PhotosLoadingState)
                       const Center(child: CircularProgressIndicator())
                     else
@@ -217,10 +232,7 @@ class HomeScreen extends StatelessWidget {
                         onPressed: () {
                           PhotoPickerScreen.pickPhotos(context);
                         },
-                        icon: const Icon(
-                          Icons.photo_library_outlined,
-                          size: 24,
-                        ),
+                        icon: const Icon(LucideIcons.images, size: 24),
                         label: const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16.0),
                           child: Text(
@@ -234,59 +246,44 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                    const SizedBox(height: AppTheme.spacingMedium),
+                    const SizedBox(height: AppTheme.spacingLarge),
 
                     // Panorama Carousel entry point — splits one wide photo
-                    // into N tiles of 4:5 for an Instagram carousel.
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        // pickSinglePhoto (unlike pickPhotos) returns the
-                        // asset directly rather than dispatching to a bloc
-                        // itself — this callsite decides where it goes,
-                        // which is what lets one picker method serve both
-                        // the framer (PhotoBloc) and panorama (PanoramaBloc)
-                        // entry points.
-                        final asset = await PhotoPickerScreen.pickSinglePhoto(
-                          context,
-                        );
-                        // context.mounted check is required: pickSinglePhoto
-                        // awaits the picker route, so Home may have been
-                        // popped in the meantime (e.g. user backgrounds the
-                        // app and it gets torn down) by the time it resolves.
-                        if (asset == null || !context.mounted) return;
-                        context.read<PanoramaBloc>().add(
-                          PanoramaSourceSelectedEvent(asset),
-                        );
-                        // Navigation is NOT here — the listener above pushes
-                        // only on PanoramaReadyState, so an ineligible photo
-                        // shows a snackbar instead of a dead-end screen.
-                      },
-                      icon: const Icon(
-                        Icons.panorama_horizontal_outlined,
-                        size: 24,
-                      ),
-                      label: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
-                        child: Text(
-                          'Panorama Carousel',
-                          style: TextStyle(fontSize: 18),
+                    // into N tiles of 4:5 for an Instagram carousel. Kept as
+                    // a plain text button rather than a second full-size
+                    // outlined button: it's a secondary, single-purpose mode
+                    // rather than a peer choice to "Select Photos", so it
+                    // shouldn't carry the same visual weight.
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () async {
+                          // pickSinglePhoto (unlike pickPhotos) returns the
+                          // asset directly rather than dispatching to a bloc
+                          // itself — this callsite decides where it goes,
+                          // which is what lets one picker method serve both
+                          // the framer (PhotoBloc) and panorama (PanoramaBloc)
+                          // entry points.
+                          final asset = await PhotoPickerScreen.pickSinglePhoto(
+                            context,
+                          );
+                          // context.mounted check is required: pickSinglePhoto
+                          // awaits the picker route, so Home may have been
+                          // popped in the meantime (e.g. user backgrounds the
+                          // app and it gets torn down) by the time it resolves.
+                          if (asset == null || !context.mounted) return;
+                          context.read<PanoramaBloc>().add(
+                            PanoramaSourceSelectedEvent(asset),
+                          );
+                          // Navigation is NOT here — the listener above pushes
+                          // only on PanoramaReadyState, so an ineligible photo
+                          // shows a snackbar instead of a dead-end screen.
+                        },
+                        icon: const Icon(
+                          LucideIcons.galleryHorizontalEnd,
+                          size: 20,
                         ),
+                        label: const Text('Create a Panorama Carousel'),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(
-                          AppTheme.minTouchTarget + 8,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spacingMedium),
-
-                    // Info Text
-                    Text(
-                      'Select up to 30 photos from your gallery',
-                      style: AppTheme.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -299,58 +296,29 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-/// Feature item widget displaying an icon, title, and description.
-///
-/// Used to highlight key features on the home screen.
-class _FeatureItem extends StatelessWidget {
+/// Compact icon-over-label chip for the home screen's feature strip — a
+/// glanceable one-line reminder of what the app does, not an onboarding
+/// explanation (that's what the description used to spell out per-feature).
+class _FeatureChip extends StatelessWidget {
   final IconData icon;
-  final String title;
-  final String description;
+  final String label;
 
-  const _FeatureItem({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
+  const _FeatureChip({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final theme = Theme.of(context);
+    return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(AppTheme.spacingSmall),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: AppTheme.bodyMedium.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 12,
           ),
-          child: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
-            size: 24,
-          ),
-        ),
-        const SizedBox(width: AppTheme.spacingMedium),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: AppTheme.titleLarge.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                description,
-                style: AppTheme.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
+          textAlign: TextAlign.center,
         ),
       ],
     );

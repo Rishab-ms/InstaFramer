@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
 /// Reusable section header for settings screens.
-/// 
+///
 /// Displays a title with optional description text below it.
 /// Styled with primary color and consistent spacing.
 class SettingsSectionHeader extends StatelessWidget {
   /// The section title text
   final String title;
-  
+
   /// Optional description text shown below the title
   final String? description;
 
@@ -51,7 +51,3 @@ class SettingsSectionHeader extends StatelessWidget {
     );
   }
 }
-
-
-
-

@@ -10,12 +10,13 @@ class FeedbackService {
   Future<String> generateFeedbackBody() async {
     final deviceInfo = DeviceInfoPlugin();
     final packageInfo = await PackageInfo.fromPlatform();
-    
+
     String deviceDetails = '';
-    
+
     if (Platform.isAndroid) {
       final androidInfo = await deviceInfo.androidInfo;
-      deviceDetails = '''
+      deviceDetails =
+          '''
 
 ---
 Device Information:
@@ -28,7 +29,7 @@ Device Information:
 Please describe your feedback or issue below this line.
 ''';
     }
-    
+
     return deviceDetails;
   }
 
@@ -39,24 +40,24 @@ Please describe your feedback or issue below this line.
     try {
       final body = await generateFeedbackBody();
       final message = userMessage ?? '';
-      
+
       // For Android, we'll use the native email intent
       // The mailer package is more suited for actual SMTP sending
       // For now, we'll prepare the data and show how to use it
-      
+
       // In a real implementation, you'd open the email app using url_launcher
       // or a similar package with a mailto: URL
-      
+
       final emailData = {
         'to': _feedbackEmail,
         'subject': '$_appName Feedback',
         'body': '$message\n$body',
       };
-      
+
       // For now, we'll just return the email data
       // You can implement the actual email sending using url_launcher
       // with: mailto:$_feedbackEmail?subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}
-      
+
       debugPrint('Email data prepared: $emailData');
     } catch (e) {
       throw Exception('Failed to prepare feedback: $e');
@@ -69,4 +70,3 @@ Please describe your feedback or issue below this line.
     return 'mailto:$_feedbackEmail?subject=$subject&body=$body';
   }
 }
-

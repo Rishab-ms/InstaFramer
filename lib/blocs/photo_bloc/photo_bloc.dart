@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../models/enums.dart';
 import '../../models/panorama_spec.dart';
 import '../../services/export_service.dart';
 import '../../services/photo_permission_service.dart';
@@ -243,6 +244,7 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
       final PanoramaEligibility eligibility = PanoramaSpec.evaluate(
         sourceWidth: asset.orientatedWidth,
         sourceHeight: asset.orientatedHeight,
+        tileRatio: PanoramaTileRatio.portrait.ratio,
       );
       if (eligibility.isEligible) {
         emit(SharedPhotoModeSelectionState(asset));

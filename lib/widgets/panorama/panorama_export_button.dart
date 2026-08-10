@@ -8,11 +8,12 @@ import '../../blocs/panorama_bloc/panorama_event.dart';
 /// rather than the main editor — exporting is the decision the user makes
 /// after checking how the carousel will actually look, not before.
 ///
-/// Carries the EXIF note beneath the button rather than tucking it into
-/// preferences — `ImageProcessor.processPanorama` writes no EXIF onto tiles
-/// at all (see the panorama plan's EXIF section), which is a real divergence
-/// from the framer's `preserveMetadata` toggle and needs to be visible at the
-/// point of the decision.
+/// The EXIF note (`ImageProcessor.processPanorama` writes no EXIF onto tiles
+/// at all — see the panorama plan's EXIF section, a real divergence from the
+/// framer's `preserveMetadata` toggle) lives as a footnote on
+/// [PanoramaProcessingView] instead of here, alongside "Don't leave this
+/// page" — the moment export is actually running, not the moment it's
+/// requested.
 class PanoramaExportButton extends StatelessWidget {
   final int tileCount;
 
@@ -30,28 +31,14 @@ class PanoramaExportButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      children: [
-        FilledButton.icon(
-          onPressed: () {
-            context.read<PanoramaBloc>().add(const ExportPanoramaEvent());
-            onExport?.call();
-          },
-          icon: const Icon(Icons.ios_share),
-          label: Text('Export $tileCount tiles'),
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "Camera and location info isn't copied to panorama tiles.",
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
+    return FilledButton.icon(
+      onPressed: () {
+        context.read<PanoramaBloc>().add(const ExportPanoramaEvent());
+        onExport?.call();
+      },
+      icon: const Icon(Icons.ios_share),
+      label: Text('Export $tileCount tiles'),
+      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
     );
   }
 }

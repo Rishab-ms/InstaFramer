@@ -68,6 +68,15 @@ class PanoramaProcessingView extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  "Camera and location info isn't preserved in panorama "
+                  'tiles.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ),

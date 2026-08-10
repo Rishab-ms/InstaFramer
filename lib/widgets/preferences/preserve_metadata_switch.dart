@@ -11,10 +11,7 @@ class PreserveMetadataSwitch extends StatelessWidget {
   /// Current state of metadata preservation
   final bool preserveMetadata;
 
-  const PreserveMetadataSwitch({
-    super.key,
-    required this.preserveMetadata,
-  });
+  const PreserveMetadataSwitch({super.key, required this.preserveMetadata});
 
   @override
   Widget build(BuildContext context) {
@@ -22,16 +19,20 @@ class PreserveMetadataSwitch extends StatelessWidget {
       child: SwitchListTile(
         title: const Text('Preserve Photo Metadata'),
         subtitle: const Text(
-          'Keep original date, location, and camera information in exported photos'
+          'Keep original date, location, and camera information in exported photos',
         ),
         value: preserveMetadata,
         onChanged: (bool value) {
           // Dispatch event to update setting
-          context.read<PreferencesBloc>().add(UpdatePreserveMetadataEvent(value));
+          context.read<PreferencesBloc>().add(
+            UpdatePreserveMetadataEvent(value),
+          );
         },
         activeColor: Theme.of(context).colorScheme.primaryContainer,
         inactiveThumbColor: Theme.of(context).colorScheme.onSurfaceVariant,
-        inactiveTrackColor: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.2),
+        inactiveTrackColor: Theme.of(
+          context,
+        ).colorScheme.onSurfaceVariant.withOpacity(0.2),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppTheme.spacingLarge,
           vertical: AppTheme.spacingSmall,
@@ -40,6 +41,3 @@ class PreserveMetadataSwitch extends StatelessWidget {
     );
   }
 }
-
-
-

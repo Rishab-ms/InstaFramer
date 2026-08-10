@@ -22,7 +22,13 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.0'
+        # Must satisfy pubspec.yaml's `sdk: ^3.10.4`. The previous pin of
+        # 3.24.0 ships Dart 3.5, so `flutter pub get` failed version solving
+        # before a single file was compiled. Keep this in step with the SDK
+        # constraint — bumping one without the other breaks CI only, which is
+        # the slowest place to find out.
+        flutter-version: '3.44.5'
+        channel: 'stable'
 
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
@@ -45,7 +51,8 @@ jobs:
         mv build/app/outputs/flutter-apk/app-release.apk InstaFrame-v${VERSION}.apk
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      # v1 runs on the deprecated Node 16 runtime.
+      uses: softprops/action-gh-release@v2
       with:
         files: InstaFrame-v*.apk
         generate_release_notes: true

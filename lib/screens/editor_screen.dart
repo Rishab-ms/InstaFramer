@@ -274,6 +274,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 PanoramaSpec.evaluate(
                   sourceWidth: state.photos.first.orientatedWidth,
                   sourceHeight: state.photos.first.orientatedHeight,
+                  tileRatio: PanoramaTileRatio.portrait.ratio,
                 ).isEligible)
               PanoramaSuggestionBanner(
                 key: ValueKey(state.photos.first.id),

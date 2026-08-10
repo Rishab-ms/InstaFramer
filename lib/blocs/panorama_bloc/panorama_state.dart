@@ -1,3 +1,5 @@
+import 'dart:ui' show Color;
+
 import 'package:equatable/equatable.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../../models/enums.dart';
@@ -44,12 +46,12 @@ class PanoramaReadyState extends PanoramaState {
   final int maxTiles;
   final PanoramaSettings settings;
 
-  /// Per-column edge-energy profile of [source], used to auto-place seams —
-  /// see `PanoramaSeams.bestSeamOffset`. Excluded from [props]: it's derived
-  /// purely from [source], which is already in [props], so including it too
-  /// would mean comparing a ~600-element list on every settings change for
-  /// no additional information.
-  final List<double> energyProfile;
+  /// Up to 6 colors suggested from [source]'s own palette, offered alongside
+  /// White/Black/Blur — see `plans/color_picking.md`. Excluded from [props]:
+  /// derived purely from [source], which is already in [props], so comparing
+  /// it too would cost a list comparison on every settings change for no
+  /// additional information.
+  final List<Color> suggestedColors;
 
   const PanoramaReadyState({
     required this.source,
@@ -57,7 +59,7 @@ class PanoramaReadyState extends PanoramaState {
     required this.sourceHeight,
     required this.maxTiles,
     required this.settings,
-    this.energyProfile = const [],
+    this.suggestedColors = const [],
   });
 
   double get sourceAspect => sourceWidth / sourceHeight;
@@ -78,7 +80,7 @@ class PanoramaReadyState extends PanoramaState {
       sourceHeight: sourceHeight,
       maxTiles: maxTiles,
       settings: settings ?? this.settings,
-      energyProfile: energyProfile,
+      suggestedColors: suggestedColors,
     );
   }
 }

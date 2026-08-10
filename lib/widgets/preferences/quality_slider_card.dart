@@ -7,7 +7,7 @@ import '../../theme/app_theme.dart';
 import 'settings_card.dart';
 
 /// Image quality slider card for adjusting JPEG export quality.
-/// 
+///
 /// Allows users to select quality from 1-100% with:
 /// - Live percentage display
 /// - Visual slider with 99 discrete steps
@@ -17,10 +17,7 @@ class QualitySliderCard extends StatelessWidget {
   /// The current quality value (1-100)
   final int currentQuality;
 
-  const QualitySliderCard({
-    super.key,
-    required this.currentQuality,
-  });
+  const QualitySliderCard({super.key, required this.currentQuality});
 
   void _onQualityChanged(BuildContext context, int quality) {
     context.read<PreferencesBloc>().add(UpdateImageQualityEvent(quality));
@@ -51,9 +48,9 @@ class QualitySliderCard extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: AppTheme.spacingSmall),
-            
+
             // Guidance text
             Text(
               'Higher quality = larger file size. Recommended: 85%',
@@ -61,7 +58,7 @@ class QualitySliderCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            
+
             // Slider
             Slider(
               value: currentQuality.toDouble(),
@@ -72,19 +69,13 @@ class QualitySliderCard extends StatelessWidget {
               onChanged: (value) => _onQualityChanged(context, value.toInt()),
               onChangeEnd: (_) => HapticFeedback.mediumImpact(),
             ),
-            
+
             // Min/Max labels
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Smaller',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Text(
-                  'Larger',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text('Smaller', style: Theme.of(context).textTheme.bodySmall),
+                Text('Larger', style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ],
@@ -93,7 +84,3 @@ class QualitySliderCard extends StatelessWidget {
     );
   }
 }
-
-
-
-

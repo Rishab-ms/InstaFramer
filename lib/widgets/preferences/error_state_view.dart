@@ -2,25 +2,21 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
 /// Error state view for displaying error messages.
-/// 
+///
 /// Shows:
 /// - Error icon
 /// - Title text
 /// - Error message
-/// 
+///
 /// Used when preferences fail to load or other errors occur.
 class ErrorStateView extends StatelessWidget {
   /// The error message to display
   final String message;
-  
+
   /// Optional title (defaults to 'Failed to load settings')
   final String? title;
 
-  const ErrorStateView({
-    super.key,
-    required this.message,
-    this.title,
-  });
+  const ErrorStateView({super.key, required this.message, this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +48,3 @@ class ErrorStateView extends StatelessWidget {
     );
   }
 }
-
-
-
-

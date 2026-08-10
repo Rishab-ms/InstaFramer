@@ -6,6 +6,7 @@ import '../../blocs/panorama_bloc/panorama_bloc.dart';
 import '../../blocs/panorama_bloc/panorama_event.dart';
 import '../../blocs/photo_bloc/photo_bloc.dart';
 import '../../blocs/photo_bloc/photo_event.dart';
+import '../../models/enums.dart';
 import '../../models/panorama_spec.dart';
 import '../../screens/panorama_editor_screen.dart';
 
@@ -42,6 +43,7 @@ class _PanoramaSuggestionBannerState extends State<PanoramaSuggestionBanner> {
     final suggestedTiles = PanoramaSpec.evaluate(
       sourceWidth: widget.photo.orientatedWidth,
       sourceHeight: widget.photo.orientatedHeight,
+      tileRatio: PanoramaTileRatio.portrait.ratio,
     ).suggestedTiles;
 
     return Container(

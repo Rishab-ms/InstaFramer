@@ -1,7 +1,9 @@
+import 'dart:ui' show Color;
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../../models/panorama_seams.dart';
+import '../../models/enums.dart';
 import '../../models/panorama_settings.dart';
 import '../../models/panorama_spec.dart';
 import '../../services/export_service.dart';
@@ -34,10 +36,12 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
     on<UpdateFitModeEvent>(_onUpdateFitMode);
     on<UpdatePanoramaScaleEvent>(_onUpdatePanoramaScale);
     on<UpdatePanoramaBackgroundTypeEvent>(_onUpdatePanoramaBackgroundType);
+    on<UpdatePanoramaBackgroundColorEvent>(_onUpdatePanoramaBackgroundColor);
     on<UpdatePanoramaBlurIntensityEvent>(_onUpdatePanoramaBlurIntensity);
-    on<UpdatePanoramaSeamOffsetEvent>(_onUpdatePanoramaSeamOffset);
-    on<ResetPanoramaSeamOffsetEvent>(_onResetPanoramaSeamOffset);
-    on<ResetPanoramaScaleEvent>(_onResetPanoramaScale);
+    on<UpdatePanoramaTileRatioEvent>(_onUpdatePanoramaTileRatio);
+    on<UpdatePanoramaCornerRadiusEvent>(_onUpdatePanoramaCornerRadius);
+    on<UpdatePanoramaCropOffsetXEvent>(_onUpdatePanoramaCropOffsetX);
+    on<UpdatePanoramaCropOffsetYEvent>(_onUpdatePanoramaCropOffsetY);
     on<ClearPanoramaEvent>(_onClearPanorama);
     on<ExportPanoramaEvent>(_onExportPanorama);
     on<DismissPanoramaErrorEvent>(_onDismissPanoramaError);
@@ -60,6 +64,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
     final eligibility = PanoramaSpec.evaluate(
       sourceWidth: sourceWidth,
       sourceHeight: sourceHeight,
+      tileRatio: PanoramaTileRatio.portrait.ratio,
     );
 
     if (!eligibility.isEligible) {
@@ -69,31 +74,40 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
 
     final prefs = await _preferencesService.loadPreferences();
 
-    // Best-effort: a thumbnail read or decode failure shouldn't block
-    // opening the editor — it just leaves the seam-nudge slider at its
-    // centred default instead of a computed one.
-    var energyProfile = const <double>[];
+    // Best-effort: a thumbnail read or decode failure shouldn't block opening
+    // the editor — it just leaves the color chips absent instead of populated.
+    var suggestedColors = const <Color>[];
     try {
       final thumbnailBytes = await source.thumbnailDataWithSize(
         const ThumbnailSize(1200, 1200),
       );
       if (thumbnailBytes != null) {
-        energyProfile = await _imageProcessor.computeEdgeEnergyProfile(
+        suggestedColors = await _imageProcessor.extractPaletteColors(
           thumbnailBytes,
         );
       }
     } catch (_) {
-      // Keep the empty profile; _withAutoSeamOffset no-ops on it.
+      // Background selector just shows no chips.
     }
 
-    final settings = _withAutoSeamOffset(
-      PanoramaSettings(
-        tileCount: eligibility.suggestedTiles,
-        scale: prefs.lastUsedScale,
-        blurIntensity: prefs.lastUsedBlurIntensity,
-      ),
-      energyProfile: energyProfile,
-      sourceAspect: sourceWidth / sourceHeight,
+    // ⚠️ The photo opens centred on both axes, always. There is machinery to
+    // pick a starting horizontal position automatically — see
+    // `PanoramaSeams` — and it is deliberately not called here. An
+    // auto-chosen offset lands the photo off centre with uneven bars on the
+    // first frame the user ever sees, which reads as a rendering fault rather
+    // than a considered choice, and it does so to solve a problem the user
+    // has not looked for yet. Positioning is theirs to drive; centred is the
+    // only defensible opening state. See `PanoramaSeams` for the full note
+    // before wiring any of it back up.
+    //
+    // Scale likewise starts at PanoramaSettings.defaultScale rather than
+    // `prefs.lastUsedScale`: that preference belongs to the framer, where
+    // insetting a photo is the feature, and a panorama opening at someone's
+    // remembered 50% shows a small photo marooned in background bars. Blur
+    // intensity is a genuine cross-feature taste and stays shared.
+    final settings = PanoramaSettings(
+      tileCount: eligibility.suggestedTiles,
+      blurIntensity: prefs.lastUsedBlurIntensity,
     );
 
     emit(
@@ -103,31 +117,47 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
         sourceHeight: sourceHeight,
         maxTiles: eligibility.maxTiles,
         settings: settings,
-        energyProfile: energyProfile,
+        suggestedColors: suggestedColors,
       ),
     );
   }
 
-  /// Recomputes `seamOffset` from a cached energy profile — shared by the
-  /// initial seed on source selection and the re-optimization on tile-count
-  /// / fit-mode changes, since seam positions shift with both. No-ops once
-  /// `seamOffsetIsManual` is set: silently overriding a deliberate drag
-  /// would be worse than a mediocre default.
-  PanoramaSettings _withAutoSeamOffset(
+  /// Clamps both position offsets to what the current framing can reach.
+  ///
+  /// Every setting that changes the canvas shape or the photo's size within it
+  /// — tile count, tile ratio, fit mode, zoom — also changes how far the photo
+  /// can slide on each axis. An offset chosen against the old framing may now
+  /// be unreachable, and *storing* an unreachable offset is what made the
+  /// slider read -50% while the render honoured -14%.
+  ///
+  /// A clamp and nothing more: the user's position is never recomputed or
+  /// second-guessed, only kept inside what the renderer will honour.
+  PanoramaSettings _reconcileOffsets(
     PanoramaSettings settings, {
-    required List<double> energyProfile,
     required double sourceAspect,
   }) {
-    if (settings.seamOffsetIsManual) return settings;
+    final canvasRatio = PanoramaSpec.canvasRatio(
+      settings.tileCount,
+      settings.tileRatio.ratio,
+    );
+
+    final maxX = PanoramaSpec.maxCropOffsetX(
+      tileCount: settings.tileCount,
+      fitMode: settings.fitMode,
+      scale: settings.scale,
+      sourceAspect: sourceAspect,
+      canvasRatio: canvasRatio,
+    );
+    final maxY = PanoramaSpec.maxCropOffsetY(
+      tileCount: settings.tileCount,
+      fitMode: settings.fitMode,
+      sourceAspect: sourceAspect,
+      canvasRatio: canvasRatio,
+    );
+
     return settings.copyWith(
-      seamOffset: PanoramaSeams.bestSeamOffset(
-        energyProfile: energyProfile,
-        tileCount: settings.tileCount,
-        fitMode: settings.fitMode,
-        scale: settings.scale,
-        sourceAspect: sourceAspect,
-        canvasRatio: PanoramaSpec.canvasRatio(settings.tileCount),
-      ),
+      cropOffsetX: settings.cropOffsetX.clamp(-maxX, maxX),
+      cropOffsetY: settings.cropOffsetY.clamp(-maxY, maxY),
     );
   }
 
@@ -143,9 +173,8 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
   ) async {
     if (state is! PanoramaReadyState) return;
     final currentState = state as PanoramaReadyState;
-    final updatedSettings = _withAutoSeamOffset(
+    final updatedSettings = _reconcileOffsets(
       currentState.settings.copyWith(tileCount: event.tileCount),
-      energyProfile: currentState.energyProfile,
       sourceAspect: currentState.sourceAspect,
     );
     emit(currentState.copyWith(settings: updatedSettings));
@@ -157,29 +186,35 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
   ) async {
     if (state is! PanoramaReadyState) return;
     final currentState = state as PanoramaReadyState;
-    final updatedSettings = _withAutoSeamOffset(
+    final updatedSettings = _reconcileOffsets(
       currentState.settings.copyWith(fitMode: event.fitMode),
-      energyProfile: currentState.energyProfile,
       sourceAspect: currentState.sourceAspect,
     );
     emit(currentState.copyWith(settings: updatedSettings));
   }
 
-  /// Updates scale and persists to `lastUsedScale`, mirroring
-  /// `PhotoBloc._onUpdateScale`.
+  /// Updates zoom.
+  ///
+  /// Deliberately does **not** persist to `lastUsedScale`, unlike
+  /// `PhotoBloc._onUpdateScale`. Zooming a panorama out is a per-photo
+  /// composition choice, not a standing preference, and writing it to the
+  /// shared key would push it onto the framer as well — the leak that made
+  /// panoramas open at whatever inset the padding editor was last left at.
+  ///
+  /// Zoom is a framing change like any other: it resizes the photo inside the
+  /// canvas, which moves every seam across it *and* changes how far the photo
+  /// can slide, so the seam offset has to be reconciled here too.
   Future<void> _onUpdatePanoramaScale(
     UpdatePanoramaScaleEvent event,
     Emitter<PanoramaState> emit,
   ) async {
     if (state is! PanoramaReadyState) return;
     final currentState = state as PanoramaReadyState;
-    final updatedSettings = currentState.settings.copyWith(scale: event.scale);
-    emit(currentState.copyWith(settings: updatedSettings));
-
-    final prefs = await _preferencesService.loadPreferences();
-    await _preferencesService.savePreferences(
-      prefs.copyWith(lastUsedScale: event.scale),
+    final updatedSettings = _reconcileOffsets(
+      currentState.settings.copyWith(scale: event.scale),
+      sourceAspect: currentState.sourceAspect,
     );
+    emit(currentState.copyWith(settings: updatedSettings));
   }
 
   Future<void> _onUpdatePanoramaBackgroundType(
@@ -190,6 +225,26 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
     final currentState = state as PanoramaReadyState;
     final updatedSettings = currentState.settings.copyWith(
       backgroundType: event.backgroundType,
+      // White/Black/Blur is mutually exclusive with a picked photo color —
+      // without clearing this, the renderer (which checks backgroundColor
+      // first) would keep showing the old color instead of the newly picked
+      // type.
+      clearBackgroundColor: true,
+    );
+    emit(currentState.copyWith(settings: updatedSettings));
+  }
+
+  /// Picks a solid color from the photo's own suggested palette — see
+  /// `plans/color_picking.md`. Overrides `backgroundType` until white/black/
+  /// blur is picked again.
+  Future<void> _onUpdatePanoramaBackgroundColor(
+    UpdatePanoramaBackgroundColorEvent event,
+    Emitter<PanoramaState> emit,
+  ) async {
+    if (state is! PanoramaReadyState) return;
+    final currentState = state as PanoramaReadyState;
+    final updatedSettings = currentState.settings.copyWith(
+      backgroundColor: event.color,
     );
     emit(currentState.copyWith(settings: updatedSettings));
   }
@@ -213,56 +268,89 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
     );
   }
 
-  /// Updates the seam-nudge offset. Marks `seamOffsetIsManual` so Step 5's
-  /// automatic seam-placement re-optimization stops overriding a deliberate
-  /// adjustment.
-  Future<void> _onUpdatePanoramaSeamOffset(
-    UpdatePanoramaSeamOffsetEvent event,
+  /// Updates the per-tile aspect ratio. Switching ratio changes the canvas
+  /// shape for the same tile count, so the current count can go from a good
+  /// fit to mostly-empty tiles — kept as-is when it still covers well,
+  /// otherwise snapped to the freshly suggested count for the new ratio.
+  Future<void> _onUpdatePanoramaTileRatio(
+    UpdatePanoramaTileRatioEvent event,
     Emitter<PanoramaState> emit,
   ) async {
     if (state is! PanoramaReadyState) return;
     final currentState = state as PanoramaReadyState;
-    final updatedSettings = currentState.settings.copyWith(
-      seamOffset: event.seamOffset,
-      seamOffsetIsManual: true,
-    );
-    emit(currentState.copyWith(settings: updatedSettings));
-  }
+    final settings = currentState.settings;
+    final newRatio = event.tileRatio.ratio;
 
-  /// Clears a manual seam-nudge and lets [_withAutoSeamOffset] pick again —
-  /// forcing `seamOffsetIsManual: false` first so the no-op guard doesn't
-  /// short-circuit the recomputation.
-  Future<void> _onResetPanoramaSeamOffset(
-    ResetPanoramaSeamOffsetEvent event,
-    Emitter<PanoramaState> emit,
-  ) async {
-    if (state is! PanoramaReadyState) return;
-    final currentState = state as PanoramaReadyState;
-    final resetSettings = _withAutoSeamOffset(
-      currentState.settings.copyWith(seamOffsetIsManual: false),
-      energyProfile: currentState.energyProfile,
+    final stillFits = PanoramaSpec.emptyTiles(
+      tileCount: settings.tileCount,
+      fitMode: settings.fitMode,
+      scale: settings.scale,
+      cropOffsetX: settings.cropOffsetX,
+      sourceAspect: currentState.sourceAspect,
+      canvasRatio: PanoramaSpec.canvasRatio(settings.tileCount, newRatio),
+    ).isEmpty;
+
+    final tileCount = stillFits
+        ? settings.tileCount
+        : PanoramaSpec.suggestedTileCount(
+            maxTiles: currentState.maxTiles,
+            fitMode: settings.fitMode,
+            scale: settings.scale,
+            sourceAspect: currentState.sourceAspect,
+            tileRatio: newRatio,
+          );
+
+    final updatedSettings = _reconcileOffsets(
+      settings.copyWith(tileRatio: event.tileRatio, tileCount: tileCount),
       sourceAspect: currentState.sourceAspect,
     );
-    emit(currentState.copyWith(settings: resetSettings));
+    emit(currentState.copyWith(settings: updatedSettings));
   }
 
-  /// Resets zoom back to the default and persists it, mirroring
-  /// `_onUpdatePanoramaScale`.
-  Future<void> _onResetPanoramaScale(
-    ResetPanoramaScaleEvent event,
+  /// Updates the photo's corner-rounding amount. Purely cosmetic — unlike
+  /// tile ratio, this never changes canvas shape or tile-count validity, so
+  /// no reconciliation is needed beyond a plain copyWith.
+  Future<void> _onUpdatePanoramaCornerRadius(
+    UpdatePanoramaCornerRadiusEvent event,
     Emitter<PanoramaState> emit,
   ) async {
     if (state is! PanoramaReadyState) return;
     final currentState = state as PanoramaReadyState;
     final updatedSettings = currentState.settings.copyWith(
-      scale: PanoramaSettings.defaultScale,
+      cornerRadius: event.cornerRadius,
     );
     emit(currentState.copyWith(settings: updatedSettings));
+  }
 
-    final prefs = await _preferencesService.loadPreferences();
-    await _preferencesService.savePreferences(
-      prefs.copyWith(lastUsedScale: PanoramaSettings.defaultScale),
+  /// Updates the horizontal crop position. Clamped by [_reconcileOffsets] to
+  /// the travel the current framing allows.
+  Future<void> _onUpdatePanoramaCropOffsetX(
+    UpdatePanoramaCropOffsetXEvent event,
+    Emitter<PanoramaState> emit,
+  ) async {
+    if (state is! PanoramaReadyState) return;
+    final currentState = state as PanoramaReadyState;
+    final updatedSettings = _reconcileOffsets(
+      currentState.settings.copyWith(cropOffsetX: event.cropOffsetX),
+      sourceAspect: currentState.sourceAspect,
     );
+    emit(currentState.copyWith(settings: updatedSettings));
+  }
+
+  /// Updates the vertical crop position. Clamped by [_reconcileOffsets] to
+  /// the slack Fill's crop window actually has; a no-op in Fit, where the
+  /// geometry pins vertical travel to zero.
+  Future<void> _onUpdatePanoramaCropOffsetY(
+    UpdatePanoramaCropOffsetYEvent event,
+    Emitter<PanoramaState> emit,
+  ) async {
+    if (state is! PanoramaReadyState) return;
+    final currentState = state as PanoramaReadyState;
+    final updatedSettings = _reconcileOffsets(
+      currentState.settings.copyWith(cropOffsetY: event.cropOffsetY),
+      sourceAspect: currentState.sourceAspect,
+    );
+    emit(currentState.copyWith(settings: updatedSettings));
   }
 
   Future<void> _onClearPanorama(

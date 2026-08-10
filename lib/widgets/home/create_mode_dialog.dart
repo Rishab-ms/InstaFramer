@@ -6,6 +6,7 @@ import '../../blocs/panorama_bloc/panorama_bloc.dart';
 import '../../blocs/panorama_bloc/panorama_event.dart';
 import '../../blocs/photo_bloc/photo_bloc.dart';
 import '../../blocs/photo_bloc/photo_event.dart';
+import '../../models/enums.dart';
 import '../../models/panorama_spec.dart';
 
 /// Mode picker shown for a fresh single-photo share that's panorama-eligible
@@ -39,6 +40,7 @@ class CreateModeDialog extends StatelessWidget {
     final suggestedTiles = PanoramaSpec.evaluate(
       sourceWidth: photo.orientatedWidth,
       sourceHeight: photo.orientatedHeight,
+      tileRatio: PanoramaTileRatio.portrait.ratio,
     ).suggestedTiles;
 
     return PopScope(
