@@ -68,6 +68,94 @@ class ImageProcessor {
     );
   }
 
+  /// Per-column horizontal gradient energy of [thumbnailBytes], normalised to
+  /// 0..1 and resampled to [samples] buckets spanning the full source width.
+  ///
+  /// Columns with a strong vertical edge (a person, a pole, a building
+  /// corner) score high; flat sky or water scores near zero — the seam
+  /// offset that minimizes energy at every seam is one that avoids cutting
+  /// through content. Runs on a thumbnail, not `originBytes` — no full decode
+  /// needed, and the profile only has to be directionally accurate, not
+  /// pixel-precise.
+  Future<List<double>> computeEdgeEnergyProfile(
+    Uint8List thumbnailBytes, {
+    int samples = 600,
+  }) {
+    return compute(
+      _computeEdgeEnergyProfileInIsolate,
+      _EdgeEnergyParams(thumbnailBytes: thumbnailBytes, samples: samples),
+    );
+  }
+
+  static List<double> _computeEdgeEnergyProfileInIsolate(
+    _EdgeEnergyParams params,
+  ) {
+    // 1. Decode the thumbnail (already small — no orientation-baking or
+    // resizing needed, unlike the full export path).
+    final image = img.decodeImage(params.thumbnailBytes);
+    if (image == null) throw Exception('Failed to decode image');
+
+    final width = image.width;
+    final height = image.height;
+    if (width < 3) return List<double>.filled(params.samples, 0);
+
+    // 2. Score every interior column by how much brightness changes
+    // horizontally across it, summed down the full column height. A column
+    // that's part of a vertical edge (a pole, a torso, a building corner)
+    // has large left-vs-right luminance jumps at many rows, so it scores
+    // high; a column of flat sky or water scores near zero. This is a
+    // one-dimensional Sobel-style horizontal gradient, one score per column
+    // rather than per pixel.
+    final rawEnergy = List<double>.filled(width, 0);
+    for (var x = 1; x < width - 1; x++) {
+      double sum = 0;
+      for (var y = 0; y < height; y++) {
+        final left = image.getPixel(x - 1, y).luminance;
+        final right = image.getPixel(x + 1, y).luminance;
+        sum += (right - left).abs();
+      }
+      rawEnergy[x] = sum;
+    }
+    // Columns 0 and width-1 have no interior neighbour on one side; copy the
+    // nearest computed column rather than leaving them at 0, which would
+    // falsely look like a perfect seam spot.
+    rawEnergy[0] = rawEnergy[1];
+    rawEnergy[width - 1] = rawEnergy[width - 2];
+
+    // 3. Normalise to 0..1 by dividing every column by the single highest
+    // score in the image. This makes the profile comparable across photos
+    // regardless of how busy or resolution each one is — `bestSeamOffset`
+    // only cares about relative energy (higher = worse seam spot), not
+    // absolute pixel-difference units.
+    final maxEnergy = rawEnergy.fold<double>(0, (m, e) => e > m ? e : m);
+    final normalized = maxEnergy == 0
+        ? rawEnergy
+        : rawEnergy.map((e) => e / maxEnergy).toList();
+
+    // 4. Downsample from one score per source pixel-column (could be
+    // thousands) to a fixed [samples] buckets spanning the same width. Each
+    // output bucket is the average of every source column that falls inside
+    // it, so this is a box-filter resize, not point sampling — a single
+    // spike one pixel wide shouldn't vanish just because it landed between
+    // two sample points. The fixed sample count keeps `bestSeamOffset`'s
+    // search cost independent of the source photo's actual resolution.
+    final resampled = List<double>.filled(params.samples, 0);
+    for (var i = 0; i < params.samples; i++) {
+      final startX = (i * width / params.samples).floor();
+      final endX = (((i + 1) * width / params.samples).ceil()).clamp(
+        startX + 1,
+        width,
+      );
+      double sum = 0;
+      for (var x = startX; x < endX; x++) {
+        sum += normalized[x];
+      }
+      resampled[i] = sum / (endX - startX);
+    }
+
+    return resampled;
+  }
+
   static List<Uint8List> _processPanoramaInIsolate(
     _PanoramaProcessingParams params,
   ) {
@@ -285,8 +373,10 @@ class ImageProcessor {
     // the source edge and copyCrop would silently return a smaller image,
     // breaking the exact-multiple tiling.
     final scaledOffset = (offsetX * cropW / targetW).round();
-    final cropX = ((src.width - cropW) ~/ 2 + scaledOffset)
-        .clamp(0, src.width - cropW);
+    final cropX = ((src.width - cropW) ~/ 2 + scaledOffset).clamp(
+      0,
+      src.width - cropW,
+    );
 
     final cropped = img.copyCrop(
       src,
@@ -382,4 +472,11 @@ class _PanoramaProcessingParams {
     required this.sourceBytes,
     required this.settings,
   });
+}
+
+class _EdgeEnergyParams {
+  final Uint8List thumbnailBytes;
+  final int samples;
+
+  _EdgeEnergyParams({required this.thumbnailBytes, required this.samples});
 }

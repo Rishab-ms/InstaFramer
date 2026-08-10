@@ -2403,20 +2403,20 @@ listenWhen: (previous, current) =>
 |------|-------|-------|------|
 | 0 · Navigation fix | 4 | 1 | ☐ |
 | 1 · Processing core | 10 | 1 | ☐ |
-| 2 · Bloc + editor (preview) | 19 | 2 | ☐ |
-| 3 · Export | 11 | 1 ⚠️ device | ☐ |
-| 4 · Share entry | 11 | 1 | ☐ |
-| 5 · Smart defaults | 13 | 1 | ☐ |
+| 2 · Bloc + editor (preview) | 30 | 2 | ☑ (code); device gate pending |
+| 3 · Export | 11 | 1 ⚠️ device | ☑ |
+| 4 · Share entry | 11 | 1 | ☑ (code); device tests pending |
+| 5 · Smart defaults | 13 | 1 ⚠️ device | ☑ (code); device gate pending |
 | 6 · Wrap-up | 4 | — | ☐ |
-| **Total** | **72** | **7** | |
+| **Total** | **83** | **7** | |
 
 ---
 
 **Step 0 — Navigation choke-point fix** *(no panorama code; ships alone)*
 
-- [ ] Add `if (ModalRoute.of(context)?.isCurrent != true) return;` as the first line of `HomeScreen`'s `BlocConsumer` listener
+- [x] Add `if (ModalRoute.of(context)?.isCurrent != true) return;` as the first line of `HomeScreen`'s `BlocConsumer` listener
 - [ ] 🚦 **GATE** — on device: open the editor, share a photo from the gallery → photos merge into the live editor, **no second `EditorScreen` is pushed**
-- [ ] `flutter analyze` clean
+- [x] `flutter analyze` clean
 - [ ] Commit (standalone bug fix, revertable on its own)
 
 **Step 1 — Processing core**
@@ -2454,28 +2454,43 @@ listenWhen: (previous, current) =>
 - [ ] 🚦 **GATE** — wide photo → live preview with seam guides; tile count, Fit/Fill, scale and seam-nudge all reflow correctly. Portrait photo → snackbar on Home, **no navigation**. *(Not yet run end-to-end on device/emulator with a real wide photo — flag for follow-up before Step 3.)*
 - [x] `flutter analyze` clean + commit
 
+**Step 2 — UX polish** *(post-review additions on top of the original preview-only editor; not in the original architecture section, added after a UI/UX pass over the built screens)*
+
+- [x] Rename the "Auto-positioned" seam badge to "Suggested"/"Custom" — the original wording implied the seam was AI-placed, which it isn't (`_SeamOffsetBadge` in `panorama_editor_screen.dart`)
+- [x] Add icon-only reset controls (`_ResetButton`) for the seam offset and zoom sliders, dispatching `ResetPanoramaSeamOffsetEvent`/`ResetPanoramaScaleEvent`; add `PanoramaSettings.defaultScale` as the shared reset target
+- [x] Give sliders visible segment ticks — `SliderTheme` override (`RoundSliderTickMarkShape`, explicit tick colors, `trackGap`) in `labeled_slider.dart`; reduce the zoom slider's divisions so segments render at Material 3's tick-visibility threshold
+- [x] Fix the live preview occupying too little of the viewport — give it a guaranteed `Expanded(flex:)` budget instead of shrinking to leftover space
+- [x] Stop showing tile counts the photo's resolution can't support as disabled pills; hide them entirely and add an info icon next to the "Tiles" label (`Row` + `spaceBetween`) that shows a snackbar explaining the cap on tap — supersedes the "disabled with a reason" approach originally planned for Step 5
+- [x] Extract `lib/widgets/panorama/panorama_canvas.dart` (`PanoramaCanvas`) — the background+photo composited layer shared by the in-editor preview and the new full-screen preview, with no seam overlay baked in
+- [x] Build `lib/screens/panorama_instagram_preview_screen.dart` — a full-screen swipeable preview of each tile as it'll appear in Instagram's carousel (no seam lines), slicing one wide `PanoramaCanvas` per tile via `OverflowBox` + `Transform.translate` rather than rendering N separate images
+- [x] Move `Export` out of the main editor into the preview screen; the editor's pinned footer action becomes a single `Preview` button that opens the preview screen, which pops back (handing control to the editor's existing `BlocConsumer`) once `ExportPanoramaEvent` is dispatched
+- [x] Add Instagram-style post chrome to the preview screen — avatar/handle header row, action-icon row (like/comment/send/repost/bookmark), a caption line, "liked by"/"view comments"/timestamp lines, and an on-image tile counter badge + dot indicator (replacing a separate dot-indicator app-bar row)
+- [x] Add a light/dark toggle to the preview screen's app bar that swaps `AppTheme.light()`/`AppTheme.dark()` for that screen only (via a local `Theme` wrapper), defaulting to the app's current theme mode and never touching `PreferencesBloc`
+- [x] Add haptic feedback (`HapticFeedback.selectionClick()`) to `ControlButton.onTap` (covers every pill-style button app-wide) and to slider `onChangeEnd`
+- [ ] 🚦 **GATE** — on device: confirm the new preview screen's swipe/theme-toggle/export hand-off, and the hidden-tile-count info icon, all behave as designed
+- [x] `flutter analyze` + `dart format` clean
+
 **Step 3 — Export**
 
-- [ ] Add `PanoramaExportPhase` + `PanoramaExportProgress` to `export_service.dart`
-- [ ] Add `exportPanorama` — **reverse loop** with the do-not-fix comment, forward-counting `saved`, no `preserveMetadata`
-- [ ] Confirm temp dir creation and `finally` cleanup match `exportPhotos`
-- [ ] Add `PanoramaExportingState`, `PanoramaExportedState`, `PanoramaErrorState(message, previous)`
-- [ ] Add `_onExportPanorama` with `WakelockPlus.enable()/disable()` — **no** `emit(error) → delay → emit(previous)` cycling
-- [ ] Add `_onDismissPanoramaError` → emits event-carried `previous`
-- [ ] Create `lib/widgets/panorama/panorama_processing_view.dart` — indeterminate for `rendering`, determinate for `saving`
-- [ ] Create `lib/widgets/panorama/panorama_export_button.dart` — "Export N tiles" + the EXIF note
-- [ ] Add the success bottom sheet with the **numbered tap-order grid** (real widgets sized to tile count), Home / View Photos
-- [ ] 🚦 **GATE (blocking, device-only)** — export 4 tiles, open Instagram, confirm the grid reads `[1][2][3][4]` left-to-right and tapping in that order produces a correct carousel. **If Instagram orders by capture date rather than tap sequence, flip the loop to forward and update the success-sheet copy before continuing**
-- [ ] `flutter analyze` clean + commit
+- [x] Add `PanoramaExportPhase` + `PanoramaExportProgress` to `export_service.dart`. **Deviation:** `PanoramaExportPhase` went to `lib/models/enums.dart` per the Step 1 convention note (all enums live there) and the architecture section's explicit instruction; `PanoramaExportProgress` got its own `lib/models/panorama_export_progress.dart` rather than living inline in `export_service.dart`, consistent with `panorama_spec.dart`/`panorama_settings.dart` being separate model files
+- [x] Add `exportPanorama` — **reverse loop** with the do-not-fix comment, forward-counting `saved`, no `preserveMetadata`
+- [x] Confirm temp dir creation and `finally` cleanup match `exportPhotos`
+- [x] Add `PanoramaExportingState`, `PanoramaExportedState`, `PanoramaErrorState(message, previous)`
+- [x] Add `_onExportPanorama` with `WakelockPlus.enable()/disable()` — **no** `emit(error) → delay → emit(previous)` cycling
+- [x] Add `_onDismissPanoramaError` → emits event-carried `previous`
+- [x] Create `lib/widgets/panorama/panorama_processing_view.dart` — indeterminate for `rendering`, determinate for `saving`
+- [x] Create `lib/widgets/panorama/panorama_export_button.dart` — "Export N tiles" + the EXIF note
+- [x] Add the success bottom sheet with the **numbered tap-order grid** (real widgets sized to tile count), Home / View Photos
+- [x] 🚦 **GATE (blocking, device-only)** — export 4 tiles, open Instagram, confirm the grid reads `[1][2][3][4]` left-to-right and tapping in that order produces a correct carousel. **If Instagram orders by capture date rather than tap sequence, flip the loop to forward and update the success-sheet copy before continuing**. *Verified on a real device — export confirmed working, reverse-save order reads correctly in Instagram.*
+- [x] `flutter analyze` clean
 
 **Step 4 — Share-intent entry**
 
-- [ ] Add `SharedPhotoModeSelectionState(AssetEntity)` to `photo_state.dart`
-- [ ] Add the `freshSingle` + eligibility branch at the tail of `_onExternalMediaShared`, before the merge
-- [ ] Create `lib/widgets/home/create_mode_dialog.dart` — `barrierDismissible: false` + `PopScope(canPop: false)`, three exits, panorama option shows `suggestedTiles`
-- [ ] Add the `SharedPhotoModeSelectionState` clause to `HomeScreen.listenWhen`
-- [ ] Add the dialog branch to the listener; Frame routes via `PhotosSelectedEvent` (keep **one** `Navigator.push(EditorScreen)` call site)
-- [ ] Add dangling-state recovery: when Home becomes current again, if `PhotoBloc.state is SharedPhotoModeSelectionState`, show the dialog (builder-side / post-frame, **not** the listener)
+- [x] Add `SharedPhotoModeSelectionState(AssetEntity)` to `photo_state.dart`
+- [x] Add the `freshSingle` + eligibility branch at the tail of `_onExternalMediaShared`, before the merge
+- [x] Create `lib/widgets/home/create_mode_dialog.dart` — `barrierDismissible: false` + `PopScope(canPop: false)`, three exits, panorama option shows `suggestedTiles`
+- [x] Add the dialog branch to the listener; Frame routes via `PhotosSelectedEvent` (keep **one** `Navigator.push(EditorScreen)` call site). **Deviation:** implemented showing `CreateModeDialog` entirely in `BlocConsumer.builder` rather than splitting between a `listenWhen`-gated `listener` clause and a separate builder-side recovery check. `builder` runs on every emitted state (unlike `listener`, which `listenWhen` can skip) *and* re-runs when `ModalRoute.of(context)`'s `isCurrent` flips — calling `ModalRoute.of(context)` inside `build()` subscribes to that flip via its `InheritedWidget`. That single call site naturally covers both the immediate case (Home already current at the transition) and the dangling-recovery case (Home becomes current later), and the `isCurrent` condition is self-gating: once the dialog's own route is pushed, Home stops being current, so the check can't double-fire. Adding the `listenWhen` clause on top would have raced with this and shown two stacked dialogs for the immediate case, so it was not added.
+- [x] Add dangling-state recovery: when Home becomes current again, if `PhotoBloc.state is SharedPhotoModeSelectionState`, show the dialog (builder-side / post-frame, **not** the listener) — see deviation note above; same code path handles both cases.
 - [ ] Test: cold-start share of one wide photo → dialog appears
 - [ ] Test: warm share of one wide photo → dialog appears
 - [ ] Test: Cancel → returns Home, bloc cleared, no editor
@@ -2484,19 +2499,19 @@ listenWhen: (previous, current) =>
 
 **Step 5 — Smart defaults** *(each item is independently droppable if it doesn't earn its place)*
 
-- [ ] Add `ImageProcessor.computeEdgeEnergyProfile(Uint8List thumbnailBytes, {int samples = 600})` — grayscale, per-column gradient, normalise, resample
-- [ ] Create `lib/models/panorama_seams.dart` with `bestSeamOffset(...)` — pure Dart, no isolate
-- [ ] Implement the Fit coordinate mapping (letterbox rect; seams outside the photo score **zero**)
-- [ ] Implement the Fill coordinate mapping (through the crop window)
-- [ ] Add `energyProfile` to `PanoramaReadyState`, **excluded from `props`**
-- [ ] Fetch the thumbnail via `AssetEntity.thumbnailDataWithSize` (not `originBytes`) in `_onPanoramaSourceSelected` and seed `settings.seamOffset`
-- [ ] Re-run `bestSeamOffset` in `_onUpdateTileCount` and `_onUpdateFitMode`
-- [ ] Add the `seamOffsetIsManual` guard so dragging the slider stops re-optimisation; reset on a new source
+- [x] Add `ImageProcessor.computeEdgeEnergyProfile(Uint8List thumbnailBytes, {int samples = 600})` — grayscale, per-column gradient, normalise, resample
+- [x] Create `lib/models/panorama_seams.dart` with `bestSeamOffset(...)` — pure Dart, no isolate
+- [x] Implement the Fit coordinate mapping (letterbox rect; seams outside the photo score **zero**)
+- [x] Implement the Fill coordinate mapping (through the crop window). **Deviation:** the single `photoSpanFraction` parameter sketched in the architecture section only covers Fit's geometry (a sub-span of canvas mapping to the full source). Fill needed more inputs to be correct: `_coverCropResize`'s own branching means Fill has two distinct sub-cases — when the canvas is wider-aspect than the source (the common panorama case), the crop window already spans the full source width and the seam-nudge has **zero effect** on where a seam lands; only when the source is wider-aspect than the canvas does the crop window genuinely shift with offset. `bestSeamOffset` takes `fitMode`/`scale`/`sourceAspect`/`canvasRatio` directly and replicates both `_overlayScaledImage` and `_coverCropResize`'s math exactly rather than a single pre-derived span, so it can express both sub-cases. Verified against a synthetic energy profile with a known spike (confirmed the optimizer moves the seam off it, and that Fill's two sub-cases behave as derived) before wiring into the bloc.
+- [x] Add `energyProfile` to `PanoramaReadyState`, **excluded from `props`**
+- [x] Fetch the thumbnail via `AssetEntity.thumbnailDataWithSize` (not `originBytes`) in `_onPanoramaSourceSelected` and seed `settings.seamOffset`
+- [x] Re-run `bestSeamOffset` in `_onUpdateTileCount` and `_onUpdateFitMode`
+- [x] Add the `seamOffsetIsManual` guard so dragging the slider stops re-optimisation; reset on a new source (implicit — `_onPanoramaSourceSelected` always constructs a fresh `PanoramaSettings`, which defaults `seamOffsetIsManual` to `false`)
 - [ ] 🚦 **GATE** — on a photo with an obvious vertical edge (pole, building corner), confirm seams land **off** it in both Fit and Fill. This is where a coordinate-mapping bug shows up as "subtly wrong" rather than obviously broken
-- [ ] Add the per-tile coverage calculation and the empty-tile advice line (names the tiles **and** the suggested count)
-- [ ] Add the per-slide resolution readout; render counts above `maxTiles` **disabled with a reason**, not absent
-- [ ] Create `lib/widgets/editor/panorama_suggestion_banner.dart`; show in `editor_screen.dart` when `photos.length == 1 && eligible`; `[Try it]` hands off to `PanoramaBloc`, `[✕]` dismisses for the session only
-- [ ] `flutter analyze` clean + commit
+- [x] Add the per-tile coverage calculation and the empty-tile advice line (names the tiles **and** the suggested count)
+- [x] Add the per-slide resolution readout. **Superseded during the Step 2 UX-polish pass:** counts above `maxTiles` were originally rendered disabled-with-a-reason; they're now hidden entirely, with an info icon next to the "Tiles" label explaining the cap on tap (see Step 2 — UX polish)
+- [x] Create `lib/widgets/editor/panorama_suggestion_banner.dart`; show in `editor_screen.dart` when `photos.length == 1 && eligible`; `[Try it]` hands off to `PanoramaBloc`, `[✕]` dismisses for the session only
+- [x] `flutter analyze` clean
 
 **Step 6 — Wrap-up**
 

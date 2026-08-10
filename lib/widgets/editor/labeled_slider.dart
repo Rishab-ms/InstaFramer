@@ -12,6 +12,7 @@ class LabeledSlider extends StatelessWidget {
   final int divisions;
   final String valueLabel;
   final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChangeEnd;
 
   const LabeledSlider({
     super.key,
@@ -23,6 +24,7 @@ class LabeledSlider extends StatelessWidget {
     required this.divisions,
     required this.valueLabel,
     required this.onChanged,
+    this.onChangeEnd,
   });
 
   @override
@@ -34,14 +36,33 @@ class LabeledSlider extends StatelessWidget {
         Icon(leadingIcon, size: 20, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(width: 8),
         Expanded(
-          child: Slider(
-            value: value,
-            min: min,
-            max: max,
-            year2023: false,
-            divisions: divisions,
-            label: valueLabel,
-            onChanged: onChanged,
+          // The default M3 track only shows gaps/tick marks once each
+          // division is wide enough — with the division counts these
+          // sliders use, that default reads as one continuous track. A
+          // slightly smaller tick radius lowers that width threshold so the
+          // discrete stops are reliably visible instead of "clean".
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              tickMarkShape: const RoundSliderTickMarkShape(
+                tickMarkRadius: 1.5,
+              ),
+              activeTickMarkColor: theme.colorScheme.onPrimary.withValues(
+                alpha: 0.8,
+              ),
+              inactiveTickMarkColor: theme.colorScheme.onSurfaceVariant
+                  .withValues(alpha: 0.6),
+              trackGap: 3,
+            ),
+            child: Slider(
+              value: value,
+              min: min,
+              max: max,
+              year2023: false,
+              divisions: divisions,
+              label: valueLabel,
+              onChanged: onChanged,
+              onChangeEnd: onChangeEnd,
+            ),
           ),
         ),
         const SizedBox(width: 8),

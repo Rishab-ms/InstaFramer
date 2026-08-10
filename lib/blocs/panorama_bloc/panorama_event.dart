@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../../models/enums.dart';
+import '../../models/panorama_settings.dart';
 
 /// Base class for all panorama-related events.
 ///
@@ -90,6 +91,18 @@ class UpdatePanoramaSeamOffsetEvent extends PanoramaEvent {
 
   @override
   List<Object?> get props => [seamOffset];
+}
+
+/// Clears a manual seam-nudge and lets automatic placement (Step 5) pick the
+/// offset again — the inverse of [UpdatePanoramaSeamOffsetEvent] setting
+/// `seamOffsetIsManual`.
+class ResetPanoramaSeamOffsetEvent extends PanoramaEvent {
+  const ResetPanoramaSeamOffsetEvent();
+}
+
+/// Resets the zoom/scale slider back to [PanoramaSettings.defaultScale].
+class ResetPanoramaScaleEvent extends PanoramaEvent {
+  const ResetPanoramaScaleEvent();
 }
 
 /// Event to trigger panorama export. Wired in Step 3.

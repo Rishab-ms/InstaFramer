@@ -63,3 +63,11 @@ enum PanoramaFitMode {
 
   final String displayName;
 }
+
+/// Phase of a panorama export.
+///
+/// Two-phase because the single `processPanorama` isolate call fully renders
+/// the canvas before any tile exists to save — a naive single-percentage
+/// stream would sit at 0% then jump. `rendering` is indeterminate; `saving`
+/// is determinate, one tick per tile committed to the gallery.
+enum PanoramaExportPhase { rendering, saving }

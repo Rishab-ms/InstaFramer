@@ -8,11 +8,13 @@ import '../blocs/photo_bloc/photo_event.dart';
 import '../blocs/photo_bloc/photo_state.dart';
 import '../models/aspect_ratio.dart' as models;
 import '../models/enums.dart';
+import '../models/panorama_spec.dart';
 import '../services/image_processor.dart';
 import '../widgets/editor/control_button.dart';
 import '../widgets/editor/editor_app_bar.dart';
 import '../widgets/editor/export_button.dart';
 import '../widgets/editor/labeled_slider.dart';
+import '../widgets/editor/panorama_suggestion_banner.dart';
 import '../widgets/editor/photo_carousel.dart';
 
 /// Editor screen - displays carousel of photos with editing controls.
@@ -263,6 +265,20 @@ class _EditorScreenState extends State<EditorScreen> {
                 ),
               ),
             ),
+
+            // Panorama discovery path — only when a single wide-enough
+            // photo is loaded, since that's the framer result the banner is
+            // steering people away from. Keyed by photo id so a different
+            // single photo gets a fresh, un-dismissed banner.
+            if (state.photos.length == 1 &&
+                PanoramaSpec.evaluate(
+                  sourceWidth: state.photos.first.orientatedWidth,
+                  sourceHeight: state.photos.first.orientatedHeight,
+                ).isEligible)
+              PanoramaSuggestionBanner(
+                key: ValueKey(state.photos.first.id),
+                photo: state.photos.first,
+              ),
 
             // Quick controls with aspect ratio and backgrounds
             _buildQuickControls(context, settings),

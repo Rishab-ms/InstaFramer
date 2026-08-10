@@ -4,6 +4,9 @@ import 'dart:typed_data';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gal/gal.dart';
+import '../models/enums.dart';
+import '../models/panorama_export_progress.dart';
+import '../models/panorama_settings.dart';
 import '../models/photo_settings.dart';
 import 'image_processor.dart';
 
@@ -93,7 +96,81 @@ class ExportService {
     }
   }
 
-  /// Synchronous implementation if bytes are already loaded. 
+  /// Renders [source] into a panorama canvas and saves it as [PanoramaSettings.tileCount]
+  /// separate tiles.
+  ///
+  /// Different from [exportPhotos] in every dimension that matters — one
+  /// source photo in, N tiles out; strictly **sequential** writes instead of
+  /// concurrent batches; no `preserveMetadata` (see `ImageProcessor.processPanorama`
+  /// for why panorama tiles carry no EXIF) — so this is a separate method
+  /// rather than four boolean flags bolted onto `exportPhotos`.
+  Stream<PanoramaExportProgress> exportPanorama({
+    required AssetEntity source,
+    required PanoramaSettings settings,
+  }) async* {
+    final tempDir = await getTemporaryDirectory();
+    final exportDir = Directory('${tempDir.path}/instaframe_export');
+    if (!await exportDir.exists()) await exportDir.create(recursive: true);
+
+    try {
+      yield PanoramaExportProgress(
+        phase: PanoramaExportPhase.rendering,
+        saved: 0,
+        total: settings.tileCount,
+      );
+
+      final originBytes = await source.originBytes;
+      if (originBytes == null) throw Exception('Failed to load image bytes');
+
+      final tiles = await _imageProcessor.processPanorama(
+        originBytes,
+        settings,
+      );
+      final n = tiles.length;
+
+      final originalName = source.title ?? 'panorama';
+      final baseName = originalName.replaceAll(
+        RegExp(r'\.(jpg|jpeg|png)$', caseSensitive: false),
+        '',
+      );
+
+      // Reverse iteration is deliberate — Instagram's picker sorts newest
+      // first and numbers carousel slides by tap order, so saving 1..N would
+      // land tile N (the newest) top-left and tapping left-to-right would
+      // play the panorama backwards. Saving N..1 makes tile 1 the newest, so
+      // the grid reads left-to-right correctly. Do not "fix" this to a
+      // forward loop. Tile numbering in the filename stays 1..N.
+      //
+      // No Future.wait/batching either — each tile must be fully committed
+      // to MediaStore (via Gal.putImage) before the next is written, so
+      // _id/date_added increase monotonically and the picker can't scramble
+      // the order.
+      for (var i = n - 1; i >= 0; i--) {
+        final seq = (i + 1).toString().padLeft(2, '0');
+        final file = File(
+          '${exportDir.path}/${baseName}_pano_${seq}_of_$n.jpg',
+        );
+        await file.writeAsBytes(tiles[i]);
+        await Gal.putImage(file.path);
+        await file.delete();
+
+        // saved counts forward even though the loop runs backwards, so the
+        // UI always shows "Saving tile 1 of N -> N of N" — never surface the
+        // internal save order.
+        yield PanoramaExportProgress(
+          phase: PanoramaExportPhase.saving,
+          saved: n - i,
+          total: n,
+        );
+      }
+    } finally {
+      if (await exportDir.exists()) {
+        await exportDir.delete(recursive: true);
+      }
+    }
+  }
+
+  /// Synchronous implementation if bytes are already loaded.
   /// The logic is fast enough to run on the compute thread or main thread 
   /// without being async since it's just array manipulation.
   Uint8List _preserveMetadata(Uint8List originalBytes, Uint8List processedBytes) {

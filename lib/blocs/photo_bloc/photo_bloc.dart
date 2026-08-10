@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../models/panorama_spec.dart';
 import '../../services/export_service.dart';
 import '../../services/photo_permission_service.dart';
 import '../../services/preferences_service.dart';
@@ -230,6 +231,25 @@ class PhotoBloc extends Bloc<PhotoEvent, PhotoState> {
     final currentState = state is PhotosLoadedState
         ? state as PhotosLoadedState
         : null;
+
+    // A fresh single share (no editor session already in flight) that's
+    // wide enough for a panorama gets a mode choice instead of landing
+    // straight in the framer — see SharedPhotoModeSelectionState and
+    // CreateModeDialog. A second share arriving while an editor is open, or
+    // a multi-photo share, always goes straight to the merge below.
+    final freshSingle = assets.length == 1 && currentState == null;
+    if (freshSingle) {
+      final asset = assets.first;
+      final PanoramaEligibility eligibility = PanoramaSpec.evaluate(
+        sourceWidth: asset.orientatedWidth,
+        sourceHeight: asset.orientatedHeight,
+      );
+      if (eligibility.isEligible) {
+        emit(SharedPhotoModeSelectionState(asset));
+        return;
+      }
+    }
+
     final existingPhotos = currentState?.photos ?? const <AssetEntity>[];
     final newPhotos = assets
         .where(

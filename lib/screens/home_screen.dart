@@ -6,6 +6,7 @@ import '../blocs/panorama_bloc/panorama_state.dart';
 import '../blocs/photo_bloc/photo_bloc.dart';
 import '../blocs/photo_bloc/photo_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/home/create_mode_dialog.dart';
 import 'editor_screen.dart';
 import 'panorama_editor_screen.dart';
 import 'photo_picker_screen.dart';
@@ -99,6 +100,11 @@ class HomeScreen extends StatelessWidget {
                 current is PhotoErrorState;
           },
           listener: (context, state) {
+            // A warm share while an editor is already open re-emits
+            // PhotosLoadedState on this (backgrounded) Home route too —
+            // without this guard, Home would push a second EditorScreen on
+            // top of the one already showing the merged photos.
+            if (ModalRoute.of(context)?.isCurrent != true) return;
             // Navigate to editor when photos are successfully loaded (first time only)
             if (state is PhotosLoadedState) {
               Navigator.push(
@@ -122,6 +128,31 @@ class HomeScreen extends StatelessWidget {
             }
           },
           builder: (context, state) {
+            // Shows CreateModeDialog for a fresh, panorama-eligible single
+            // photo share (SharedPhotoModeSelectionState). Deliberately
+            // here rather than in `listener`: `listener` only fires on the
+            // transition *into* this state, but that transition may have
+            // happened while Home wasn't the current route (an editor was
+            // open), in which case the isCurrent guard above suppresses it
+            // — Home is then left silently parked in this state with no
+            // dialog ever shown ("dangling state", see the panorama plan's
+            // Flow B). `builder` runs both at the original transition (if
+            // Home was already current) and again later when Home becomes
+            // current — calling `ModalRoute.of(context)` here subscribes
+            // this build to route current-ness changes, so popping back to
+            // Home from the editor re-triggers this check. The `isCurrent`
+            // condition itself makes this idempotent: once shown, the
+            // dialog's own route makes Home non-current again, so the
+            // check no longer matches until the state changes.
+            if (state is SharedPhotoModeSelectionState &&
+                ModalRoute.of(context)?.isCurrent == true) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) {
+                  CreateModeDialog.show(context, state.photo);
+                }
+              });
+            }
+
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(AppTheme.spacingLarge),

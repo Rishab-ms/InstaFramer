@@ -9,6 +9,9 @@ import 'panorama_spec.dart';
 /// pushing panorama concepts into `PhotoSettings` would leak them into the
 /// framer's isolate and `copyWith`.
 class PanoramaSettings extends Equatable {
+  /// The scale a fresh panorama (or a reset zoom slider) starts at.
+  static const double defaultScale = 0.92;
+
   final int tileCount;
   final PanoramaFitMode fitMode;
 
@@ -36,7 +39,7 @@ class PanoramaSettings extends Equatable {
   const PanoramaSettings({
     required this.tileCount,
     this.fitMode = PanoramaFitMode.fit,
-    this.scale = 0.92,
+    this.scale = defaultScale,
     this.backgroundType = BackgroundType.white,
     this.blurIntensity = 75,
     this.imageQuality = 85,
@@ -62,16 +65,16 @@ class PanoramaSettings extends Equatable {
 
   @override
   List<Object?> get props => [
-        tileCount,
-        fitMode,
-        scale,
-        backgroundType,
-        blurIntensity,
-        imageQuality,
-        tileWidth,
-        seamOffset,
-        seamOffsetIsManual,
-      ];
+    tileCount,
+    fitMode,
+    scale,
+    backgroundType,
+    blurIntensity,
+    imageQuality,
+    tileWidth,
+    seamOffset,
+    seamOffsetIsManual,
+  ];
 
   PanoramaSettings copyWith({
     int? tileCount,

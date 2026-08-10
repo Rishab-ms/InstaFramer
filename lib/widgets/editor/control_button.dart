@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Small pill-shaped selector button used for quick-control rows (aspect
 /// ratio, background type, tile count, ...).
@@ -21,7 +22,10 @@ class ControlButton extends StatelessWidget {
     final theme = Theme.of(context);
 
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
