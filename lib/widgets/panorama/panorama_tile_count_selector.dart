@@ -14,7 +14,7 @@ import '../editor/control_button.dart';
 /// bars-vs-cropped consequence line or an empty-tile advice line.
 ///
 /// Counts above [maxTiles] this photo's resolution can't support are simply
-/// not shown — an info icon next to the "Tiles" label explains the cap on
+/// not shown. An info icon next to the "Tiles" label explains the cap on
 /// tap, rather than cluttering the row with pills that can never be picked.
 class PanoramaTileCountSelector extends StatelessWidget {
   final PanoramaSettings settings;
@@ -41,17 +41,17 @@ class PanoramaTileCountSelector extends StatelessWidget {
     );
 
     // Per-tile width is Instagram's fixed slide minimum (see
-    // PanoramaSettings.tileWidth) — always the same number, so it's only
+    // PanoramaSettings.tileWidth), always the same number, so it's only
     // worth surfacing when this photo can't actually deliver it.
     final nativePerTile = sourceWidth ~/ tileCount;
     final belowMinimum = nativePerTile < PanoramaSpec.minTileWidth;
     final resolutionWarning = belowMinimum
-        ? '$tileCount tiles · ${nativePerTile}px/slide — below '
+        ? '$tileCount tiles · ${nativePerTile}px/slide, below '
               "Instagram's ${PanoramaSpec.minTileWidth}px minimum"
         : null;
 
-    // Which dimension has to give depends only on which shape is wider —
-    // this sign flip is the entire decision. Matches the 2x2 table in the
+    // Which dimension has to give depends only on which shape is wider.
+    // This sign flip is the entire decision. Matches the 2x2 table in the
     // panorama plan's "UI" section:
     //   Fill, canvas wider than photo  -> top/bottom cropped (photo's tall
     //                                     edges get cut to cover the width)
@@ -79,9 +79,9 @@ class PanoramaTileCountSelector extends StatelessWidget {
     // Only one line, because a stack of advice reads as noise and the user can
     // only act on one thing at a time anyway.
     //
-    // ⚠️ There is a third tier available — `PanoramaSeams.cleanerTileCount`
+    // ⚠️ There is a third tier available, `PanoramaSeams.cleanerTileCount`
     // can name a tile count whose slides would divide the photo through
-    // quieter pixels — and it is deliberately not shown. See `PanoramaSeams`.
+    // quieter pixels, and it is deliberately not shown. See `PanoramaSeams`.
     final String secondLine;
     final Color secondLineColor;
     if (emptyTiles.isNotEmpty) {
@@ -95,7 +95,7 @@ class PanoramaTileCountSelector extends StatelessWidget {
       final tileList = emptyTiles.join(', ');
       secondLine =
           '⚠ ${emptyTiles.length == 1 ? "Tile" : "Tiles"} $tileList '
-          '${emptyTiles.length == 1 ? "is" : "are"} mostly empty — try '
+          '${emptyTiles.length == 1 ? "is" : "are"} mostly empty. Try '
           '$suggestion tiles';
       secondLineColor = theme.colorScheme.error;
     } else {
@@ -108,7 +108,7 @@ class PanoramaTileCountSelector extends StatelessWidget {
     // exist, not the ones that don't, so a permanent icon would be answering
     // a question nobody can ask. `maxTiles` is `sourceWidth ~/ 1080`, so the
     // old "explain whenever anything is capped" rule fired on every photo
-    // narrower than 10800px — which is all of them.
+    // narrower than 10800px, which is all of them.
     //
     // The exception is a photo that supports only the minimum: the row then
     // renders a single pill, which reads as broken rather than as a limit.
@@ -151,7 +151,7 @@ class PanoramaTileCountSelector extends StatelessWidget {
                     SnackBar(
                       content: Text(
                         "This photo is ${sourceWidth}px wide, so $maxTiles "
-                        'tiles is the only option — splitting it further '
+                        'tiles is the only option. Splitting it further '
                         "would drop each slide below Instagram's "
                         '${PanoramaSpec.minTileWidth}px minimum.',
                       ),
@@ -159,7 +159,7 @@ class PanoramaTileCountSelector extends StatelessWidget {
                     ),
                   );
                 },
-                // Information, not an error — nothing is wrong, the photo
+                // Information, not an error. Nothing is wrong, the photo
                 // just isn't wide enough to divide more ways.
                 child: Padding(
                   padding: const EdgeInsets.all(4),

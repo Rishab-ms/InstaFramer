@@ -70,7 +70,7 @@ class UpdatePanoramaBackgroundTypeEvent extends PanoramaEvent {
 
 /// Event to update the background to a solid color, e.g. one of the photo's
 /// own suggested swatches. Overrides [UpdatePanoramaBackgroundTypeEvent]'s
-/// choice entirely until white/black/blur is picked again — see
+/// choice entirely until white/black/blur is picked again. See
 /// `plans/color_picking.md`. Only meaningful in Fit mode.
 class UpdatePanoramaBackgroundColorEvent extends PanoramaEvent {
   final Color color;
@@ -103,7 +103,7 @@ class UpdatePanoramaTileRatioEvent extends PanoramaEvent {
 
 /// Event to update the photo's corner-rounding amount, as a fraction of the
 /// photo's own shorter side (0 = square corners). Only meaningful in Fit
-/// mode — Fill has no background behind the photo for rounded corners to
+/// mode. Fill has no background behind the photo for rounded corners to
 /// reveal.
 class UpdatePanoramaCornerRadiusEvent extends PanoramaEvent {
   final double cornerRadius;
@@ -132,7 +132,7 @@ class UpdatePanoramaCropOffsetXEvent extends PanoramaEvent {
 
 /// Moves the photo up or down within the canvas, choosing what Fill's crop
 /// keeps. Separate from [UpdatePanoramaCropOffsetXEvent] because it positions
-/// the crop, not the seams — see `PanoramaSettings.cropOffsetY`.
+/// the crop, not the seams. See `PanoramaSettings.cropOffsetY`.
 class UpdatePanoramaCropOffsetYEvent extends PanoramaEvent {
   final double cropOffsetY;
 

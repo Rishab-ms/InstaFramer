@@ -89,8 +89,8 @@ class PhotoPickerScreen {
   /// Launch the photo picker for a single photo (the panorama flow).
   ///
   /// Same permission handling and error dialogs as [pickPhotos], but limited
-  /// to one asset and **returns** it instead of dispatching to [PhotoBloc] —
-  /// the caller routes the result to `PanoramaBloc`.
+  /// to one asset and **returns** it instead of dispatching to [PhotoBloc].
+  /// The caller routes the result to `PanoramaBloc`.
   ///
   /// [context] - BuildContext to access permissions and show dialogs
   static Future<AssetEntity?> pickSinglePhoto(BuildContext context) async {

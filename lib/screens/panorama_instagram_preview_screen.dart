@@ -8,14 +8,14 @@ import '../widgets/panorama/panorama_canvas.dart';
 import '../widgets/panorama/panorama_export_button.dart';
 
 /// Full-screen swipeable preview approximating what each panorama tile will
-/// look like as an individual Instagram carousel slide — no seam lines, no
+/// look like as an individual Instagram carousel slide, no seam lines, no
 /// tile-number badges, just the photo one tile at a time with the same swipe
 /// gesture Instagram's carousel uses, plus decorative post chrome (avatar,
 /// like/comment/share/repost icons, a caption) so it reads as an actual post
 /// rather than a bare image strip.
 ///
-/// This is also where export actually happens — see [PanoramaExportButton]
-/// below — on the idea that exporting is the decision made *after* checking
+/// This is also where export actually happens. See [PanoramaExportButton]
+/// below, on the idea that exporting is the decision made *after* checking
 /// how the carousel will look, not before. Popping back to
 /// `PanoramaEditorScreen` on export deliberately hands off to its existing
 /// `BlocConsumer`, which already owns the exporting/success/error UI; this
@@ -23,12 +23,12 @@ import '../widgets/panorama/panorama_export_button.dart';
 ///
 /// Deliberately reuses [PanoramaCanvas] (the same widget-composited
 /// background+photo layer the in-editor preview uses) sliced per tile,
-/// rather than running the real `ImageProcessor.processPanorama` isolate —
-/// this is a "what will this roughly look like" check, not a pixel-exact
+/// rather than running the real `ImageProcessor.processPanorama` isolate.
+/// This is a "what will this roughly look like" check, not a pixel-exact
 /// render, and staying widget-composited keeps it instant to open.
 ///
 /// The light/dark toggle in the app bar overrides [AppTheme] locally for
-/// this screen only (via a [Theme] wrapper) — it never touches
+/// this screen only (via a [Theme] wrapper), it never touches
 /// `PreferencesBloc`, so previewing "how this looks in dark mode" doesn't
 /// flip the rest of the app.
 class PanoramaInstagramPreviewScreen extends StatefulWidget {
@@ -115,7 +115,7 @@ class _PanoramaInstagramPreviewScreenState
     );
   }
 
-  /// Avatar + handle + overflow menu — the row that sits above the media on
+  /// Avatar + handle + overflow menu. The row that sits above the media on
   /// every real Instagram post.
   Widget _buildPostHeader(ThemeData theme) {
     final onSurface = theme.colorScheme.onSurface;
@@ -150,7 +150,7 @@ class _PanoramaInstagramPreviewScreenState
   /// The swipeable 4:5 media area, with a "current/total" pill overlaid
   /// directly on the image, matching where Instagram actually puts it. The
   /// dot indicator, unlike the pill, isn't overlaid on real Instagram posts
-  /// — it sits in its own row below the image, above the action icons — so
+  ///. It sits in its own row below the image, above the action icons, so
   /// it's built separately and placed there instead (see [build]).
   Widget _buildMediaCarousel(int tileCount, bool isDark) {
     return Center(
@@ -199,7 +199,7 @@ class _PanoramaInstagramPreviewScreenState
   }
 
   /// Sits between the media and the action-icon row on its own line, against
-  /// the scaffold background rather than overlaid on the photo — so its dots
+  /// the scaffold background rather than overlaid on the photo, so its dots
   /// need theme-aware colors instead of the fixed white that worked when
   /// they sat on top of an image.
   Widget _buildDotIndicator(ThemeData theme, int tileCount) {
@@ -228,12 +228,12 @@ class _PanoramaInstagramPreviewScreenState
   }
 
   /// Decorative action row, caption and byline mimicking a real Instagram
-  /// post — purely illustrative (none of the icons but Export do anything) —
+  /// post. Purely illustrative (none of the icons but Export do anything),
   /// with the actual export action folded into the same surface so it reads
   /// as "the rest of the post" rather than a separate control.
   ///
   /// Deliberately down to two text lines (caption, comments link) rather than
-  /// the four a real post shows — "Liked by..." and a timestamp add density
+  /// the four a real post shows. "Liked by..." and a timestamp add density
   /// without telling the user anything about *their* carousel, so they're
   /// dropped in favor of more breathing room around what's left.
   Widget _buildPostChrome(BuildContext context, ThemeData theme) {
@@ -299,8 +299,8 @@ class _PanoramaInstagramPreviewScreenState
     );
   }
 
-  /// Slices the single wide [PanoramaCanvas] into a one-tile-wide window —
-  /// rendering the whole canvas at `pageWidth * tileCount` and shifting it
+  /// Slices the single wide [PanoramaCanvas] into a one-tile-wide window.
+  /// Rendering the whole canvas at `pageWidth * tileCount` and shifting it
   /// left by `pageWidth * index` inside an [OverflowBox], rather than
   /// building a separate cropped image per tile.
   Widget _buildTilePage(int index, int tileCount) {

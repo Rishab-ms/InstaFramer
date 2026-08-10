@@ -4,11 +4,11 @@ import '../../models/enums.dart';
 
 /// Two-phase progress view shown while a panorama exports.
 ///
-/// `rendering` is indeterminate — the single `processPanorama` isolate call
+/// `rendering` is indeterminate. The single `processPanorama` isolate call
 /// must finish in full before any tile exists to report progress on, so a
 /// naive percentage would sit at 0% then jump. `saving` is determinate, one
 /// tick per tile committed to the gallery. `PopScope(canPop: false)` mirrors
-/// the framer's processing view — exporting is not interruptible.
+/// the framer's processing view. Exporting is not interruptible.
 class PanoramaProcessingView extends StatelessWidget {
   final PanoramaExportPhase phase;
   final int saved;
@@ -86,7 +86,7 @@ class PanoramaProcessingView extends StatelessWidget {
   }
 }
 
-/// Decorative stand-in for the canvas — [total] faint tiles, not a live
+/// Decorative stand-in for the canvas, [total] faint tiles, not a live
 /// render of the photo. [PanoramaExportingState] deliberately carries no
 /// `source`/`settings`, so this view has nothing to render the real preview
 /// from.

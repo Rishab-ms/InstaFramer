@@ -33,7 +33,7 @@ class PanoramaSettings extends Equatable {
 
   /// A color picked from the photo's own suggested palette (see
   /// `plans/color_picking.md`), overriding [backgroundType] entirely when
-  /// set. Not folded into [BackgroundType] itself — that enum is shared with
+  /// set. Not folded into [BackgroundType] itself. That enum is shared with
   /// the framer's `PhotoSettings`, which has no picker for this yet, and
   /// adding a value only panorama can produce would leak a panorama-only
   /// concept into the framer's exhaustive switches. Only meaningful in
@@ -47,7 +47,7 @@ class PanoramaSettings extends Equatable {
 
   /// Corner rounding applied to the photo itself, as a fraction of the
   /// photo's own shorter side (0 = square, e.g. 0.3 = 30%). Only meaningful
-  /// in [PanoramaFitMode.fit] — Fill has no background behind the photo for
+  /// in [PanoramaFitMode.fit]. Fill has no background behind the photo for
   /// rounded corners to reveal.
   final double cornerRadius;
 
@@ -65,14 +65,14 @@ class PanoramaSettings extends Equatable {
 
   /// Vertical nudge of the photo within the canvas, in **canvas heights**.
   /// 0 = centred; positive moves the photo down, revealing more of the
-  /// source's top — matching [cropOffsetX]'s "positive moves the photo toward
+  /// source's top. Matching [cropOffsetX]'s "positive moves the photo toward
   /// the increasing axis" convention.
   ///
   /// A separate field rather than a Y component of [cropOffsetX] because the
   /// two answer different questions. [cropOffsetX] positions the *seams*, which
   /// only run vertically, and carries automatic placement plus its own
   /// manual-override flag. This positions the *crop*, deciding what gets
-  /// thrown away, and is purely manual — there is no vertical equivalent of
+  /// thrown away, and is purely manual. There is no vertical equivalent of
   /// the seam energy profile because there is no horizontal cut to avoid.
   ///
   /// Only meaningful in [PanoramaFitMode.fill]. Fit crops nothing, so a

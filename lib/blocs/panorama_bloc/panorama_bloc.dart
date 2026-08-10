@@ -14,8 +14,8 @@ import 'panorama_state.dart';
 
 /// BLoC for managing the panorama-carousel selection and editing workflow.
 ///
-/// Deliberately separate from [PhotoBloc] rather than an extension of it —
-/// see the "Architecture" section of the panorama plan. Shares
+/// Deliberately separate from [PhotoBloc] rather than an extension of it.
+/// See the "Architecture" section of the panorama plan. Shares
 /// [ExportService] and [PreferencesService] with the framer, but owns no
 /// mutable state in common with it.
 class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
@@ -51,7 +51,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
   /// [PanoramaReadyState] or [PanoramaIneligibleState].
   ///
   /// Uses `orientatedWidth`/`orientatedHeight` rather than raw `width`/
-  /// `height` — an EXIF-rotated wide photo reports portrait dimensions on
+  /// `height`: an EXIF-rotated wide photo reports portrait dimensions on
   /// Android and would be wrongly rejected otherwise.
   Future<void> _onPanoramaSourceSelected(
     PanoramaSourceSelectedEvent event,
@@ -75,7 +75,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
     final prefs = await _preferencesService.loadPreferences();
 
     // Best-effort: a thumbnail read or decode failure shouldn't block opening
-    // the editor — it just leaves the color chips absent instead of populated.
+    // the editor. It just leaves the color chips absent instead of populated.
     var suggestedColors = const <Color>[];
     try {
       final thumbnailBytes = await source.thumbnailDataWithSize(
@@ -91,8 +91,8 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
     }
 
     // ⚠️ The photo opens centred on both axes, always. There is machinery to
-    // pick a starting horizontal position automatically — see
-    // `PanoramaSeams` — and it is deliberately not called here. An
+    // pick a starting horizontal position automatically. See
+    // `PanoramaSeams`: and it is deliberately not called here. An
     // auto-chosen offset lands the photo off centre with uneven bars on the
     // first frame the user ever sees, which reads as a rendering fault rather
     // than a considered choice, and it does so to solve a problem the user
@@ -125,7 +125,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
   /// Clamps both position offsets to what the current framing can reach.
   ///
   /// Every setting that changes the canvas shape or the photo's size within it
-  /// — tile count, tile ratio, fit mode, zoom — also changes how far the photo
+  ///. Tile count, tile ratio, fit mode, zoom. Also changes how far the photo
   /// can slide on each axis. An offset chosen against the old framing may now
   /// be unreachable, and *storing* an unreachable offset is what made the
   /// slider read -50% while the render honoured -14%.
@@ -162,7 +162,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
   }
 
   // The five settings handlers below all guard on `state is
-  // PanoramaReadyState` and no-op otherwise — mirrors PhotoBloc's handlers.
+  // PanoramaReadyState` and no-op otherwise. Mirrors PhotoBloc's handlers.
   // These events can only be dispatched from PanoramaEditorScreen, which is
   // only reachable once the bloc is already in PanoramaReadyState, so the
   // guard is a defensive no-op in practice, not a reachable branch.
@@ -198,7 +198,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
   /// Deliberately does **not** persist to `lastUsedScale`, unlike
   /// `PhotoBloc._onUpdateScale`. Zooming a panorama out is a per-photo
   /// composition choice, not a standing preference, and writing it to the
-  /// shared key would push it onto the framer as well — the leak that made
+  /// shared key would push it onto the framer as well. The leak that made
   /// panoramas open at whatever inset the padding editor was last left at.
   ///
   /// Zoom is a framing change like any other: it resizes the photo inside the
@@ -225,7 +225,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
     final currentState = state as PanoramaReadyState;
     final updatedSettings = currentState.settings.copyWith(
       backgroundType: event.backgroundType,
-      // White/Black/Blur is mutually exclusive with a picked photo color —
+      // White/Black/Blur is mutually exclusive with a picked photo color,
       // without clearing this, the renderer (which checks backgroundColor
       // first) would keep showing the old color instead of the newly picked
       // type.
@@ -234,7 +234,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
     emit(currentState.copyWith(settings: updatedSettings));
   }
 
-  /// Picks a solid color from the photo's own suggested palette — see
+  /// Picks a solid color from the photo's own suggested palette. See
   /// `plans/color_picking.md`. Overrides `backgroundType` until white/black/
   /// blur is picked again.
   Future<void> _onUpdatePanoramaBackgroundColor(
@@ -270,7 +270,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
 
   /// Updates the per-tile aspect ratio. Switching ratio changes the canvas
   /// shape for the same tile count, so the current count can go from a good
-  /// fit to mostly-empty tiles — kept as-is when it still covers well,
+  /// fit to mostly-empty tiles. Kept as-is when it still covers well,
   /// otherwise snapped to the freshly suggested count for the new ratio.
   Future<void> _onUpdatePanoramaTileRatio(
     UpdatePanoramaTileRatioEvent event,
@@ -307,7 +307,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
     emit(currentState.copyWith(settings: updatedSettings));
   }
 
-  /// Updates the photo's corner-rounding amount. Purely cosmetic — unlike
+  /// Updates the photo's corner-rounding amount. Purely cosmetic. Unlike
   /// tile ratio, this never changes canvas shape or tile-count validity, so
   /// no reconciliation is needed beyond a plain copyWith.
   Future<void> _onUpdatePanoramaCornerRadius(
@@ -364,7 +364,7 @@ class PanoramaBloc extends Bloc<PanoramaEvent, PanoramaState> {
   /// two-phase progress stream as [PanoramaExportingState].
   ///
   /// ❌ Does NOT copy `PhotoBloc._onExportAllPhotos`'s
-  /// `emit(error) -> delay -> emit(previous)` cycling — that's the
+  /// `emit(error) -> delay -> emit(previous)` cycling. That's the
   /// auto-state-cycling the Development Rules forbid. On failure this emits a
   /// terminal [PanoramaErrorState] carrying `previous`; the UI decides when to
   /// return to it via [DismissPanoramaErrorEvent].

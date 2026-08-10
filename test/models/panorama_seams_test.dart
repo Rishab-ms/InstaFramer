@@ -7,7 +7,7 @@ void main() {
   const samples = 600;
 
   /// A profile that is [background] everywhere except a narrow spike of 1.0
-  /// centred on source fraction [at] — a single hard vertical edge (a pole, a
+  /// centred on source fraction [at]. A single hard vertical edge (a pole, a
   /// building corner, a person) in an otherwise quiet photo.
   List<double> spikeAt(double at, {double background = 0.05}) {
     final profile = List<double>.filled(samples, background);
@@ -18,7 +18,7 @@ void main() {
     return profile;
   }
 
-  /// Busy on the left, quiet on the right — the shape that tempts an
+  /// Busy on the left, quiet on the right. The shape that tempts an
   /// unconstrained search to shove the photo as far as it will go.
   List<double> rampDown() =>
       List<double>.generate(samples, (i) => 1.0 - i / (samples - 1));
@@ -59,7 +59,7 @@ void main() {
     });
 
     test('returns 0 with no energy profile at all', () {
-      // Thumbnail read or decode failed — centred is the honest default.
+      // Thumbnail read or decode failed. Centred is the honest default.
       expect(best(profile: const [], scale: 0.8), 0);
     });
 
@@ -86,8 +86,8 @@ void main() {
     test('stays inside the travel the framing allows', () {
       // Regression for the reported bug: the sweep used to span a nominal
       // ±0.5 tile while the renderer clamped to the slack, so every
-      // over-range candidate scored identically and the first one scanned —
-      // the hard-left extreme — won on a tie and was stored as -50%. The
+      // over-range candidate scored identically and the first one scanned.
+      // The hard-left extreme. Won on a tie and was stored as -50%. The
       // photo then jumped to the canvas edge with a quarter of it hanging
       // off, behind a background bar the export never produced.
       for (final scale in [0.5, 0.7, 0.92, 1.0]) {
@@ -123,7 +123,7 @@ void main() {
   group('bestSeamOffset moves the seam off a hard edge', () {
     test('shifts away from an edge sitting on the centred seam', () {
       // Photo spans 80% of the canvas, so the single seam at canvas 0.5 maps
-      // to source 0.5 when centred — right through the spike.
+      // to source 0.5 when centred, right through the spike.
       final profile = spikeAt(0.5);
       final offset = best(profile: profile, scale: 0.8);
 
@@ -143,12 +143,12 @@ void main() {
 
   test('bestSeamOffset never empties a tile to quiet a seam', () {
     // A seam parked in Fit's background bars cuts through nothing and so
-    // scores zero — which means an unconstrained search is rewarded for
+    // scores zero, which means an unconstrained search is rewarded for
     // shoving the photo into a corner until a whole carousel slide is blank.
     //
     // Framing: 2 tiles, photo spanning 60% of the canvas. Centred, both tiles
     // are 60% covered; at the far end of the travel the leading tile drops to
-    // 20% — a slide that is mostly background.
+    // 20%. A slide that is mostly background.
     const scale = 0.6;
     final centred = geometryFor(0, scale: scale);
     expect(centred.emptyTiles(), isEmpty);
@@ -168,7 +168,7 @@ void main() {
   test('bestSeamOffset does not exploit an already-under-covered framing', () {
     // Regression: counting empty tiles instead of measuring them let a bad
     // framing justify a worse one. Zoomed out to 50%, a 1.5:1 source covers
-    // only ~47% of each of its two tiles, so *both* already count as empty —
+    // only ~47% of each of its two tiles, so *both* already count as empty,
     // and sliding the photo hard left, which parks the seam in the background
     // bar for a free score of zero, drops the count from two to one and
     // registered as an improvement. The result was a photo jammed against the
@@ -215,7 +215,7 @@ void main() {
     test('offers an odd count when a subject sits dead centre', () {
       // The case zoom cannot fix. Every even tile count has a seam at canvas
       // 0.5, and scaling about the canvas centre leaves the centre a fixed
-      // point — so at 4 tiles a centred subject is cut at every zoom level.
+      // point, so at 4 tiles a centred subject is cut at every zoom level.
       // Only a different tile count moves that cut.
       final suggestion = cleaner(
         profile: spikeAt(0.5),
@@ -232,7 +232,7 @@ void main() {
     });
 
     test('stays quiet when the current count already cuts cleanly', () {
-      // At 3 tiles the seams fall at roughly source 0.33 and 0.67 — already
+      // At 3 tiles the seams fall at roughly source 0.33 and 0.67. Already
       // clear of a centred subject, so there is nothing to advise.
       expect(
         cleaner(profile: spikeAt(0.5), currentTileCount: 3, sourceAspect: 3.0),
@@ -253,7 +253,7 @@ void main() {
       // fills, while 3 tiles is a 2.4:1 canvas it only reaches 62% across, so
       // the outer slides drop under the empty-tile threshold. The subject is
       // dead centre and gets cut, and there is genuinely nothing better to
-      // offer — so the advice stays silent rather than trading one visible
+      // offer, so the advice stays silent rather than trading one visible
       // defect for a worse one.
       expect(cleaner(profile: spikeAt(0.5), sourceAspect: 1.5), isNull);
     });

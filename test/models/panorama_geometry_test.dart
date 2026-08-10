@@ -3,7 +3,7 @@ import 'package:insta_upload_helper/models/enums.dart';
 import 'package:insta_upload_helper/models/panorama_geometry.dart';
 
 void main() {
-  // Pure arithmetic — no binding, no isolate, no I/O.
+  // Pure arithmetic, no binding, no isolate, no I/O.
 
   PanoramaGeometry fit({
     int tileCount = 2,
@@ -34,7 +34,7 @@ void main() {
 
   group('Fit', () {
     test('centres the photo and reports the bars as having no source', () {
-      // Source 1.6:1 at scale 0.8 into a 1.6:1 canvas — the photo spans 80% of
+      // Source 1.6:1 at scale 0.8 into a 1.6:1 canvas. The photo spans 80% of
       // the canvas width, leaving a 10% bar each side.
       final geometry = fit(sourceAspect: 1.6, scale: 0.8);
 
@@ -53,7 +53,7 @@ void main() {
       // widths at 2 tiles.
       expect(geometry.maxCropOffsetX, closeTo(0.2, 1e-9));
       expect(geometry.cropOffsetX, closeTo(0.2, 1e-9));
-      // Clamped, so the photo's right edge lands exactly on the canvas edge —
+      // Clamped, so the photo's right edge lands exactly on the canvas edge,
       // never past it. This is the bug the preview used to show: an
       // unclamped nudge painted part of the photo outside the canvas, where
       // it was silently cropped away and replaced by a background bar the
@@ -142,7 +142,7 @@ void main() {
 
       // Moving the photo down means taking the crop from further up.
       expect(nudged.cropTop, lessThan(centred.cropTop));
-      // Same convention as the horizontal nudge, which is the point — one
+      // Same convention as the horizontal nudge, which is the point, one
       // mental model for both axes.
       expect(
         fill(sourceAspect: 3.2, cropOffsetX: nudge).cropStart,
@@ -207,7 +207,7 @@ void main() {
 
   test('Fit stays vertically centred and offers no vertical travel', () {
     // Fit crops nothing, so a vertical nudge could only slide the photo
-    // between its own bars — an asymmetry that reads as a misaligned render
+    // between its own bars. An asymmetry that reads as a misaligned render
     // rather than a composition choice. The geometry refuses it outright so
     // no caller has to remember the rule.
     final geometry = PanoramaGeometry.resolve(

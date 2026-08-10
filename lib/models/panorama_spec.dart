@@ -33,7 +33,7 @@ class PanoramaSpec {
   ///
   /// Checks run in order and the first failure wins, so the reason surfaced to
   /// the user is always the most actionable one. [tileRatio] only feeds
-  /// [PanoramaEligibility.suggestedTiles] — eligibility itself and [maxTiles]
+  /// [PanoramaEligibility.suggestedTiles]. Eligibility itself and [maxTiles]
   /// are shape-independent (a resolution/aspect check and a resolution cap
   /// respectively), so evaluating once at pick-time (against whatever ratio
   /// a fresh [PanoramaSettings] starts at) stays valid even if the user
@@ -52,14 +52,14 @@ class PanoramaSpec {
     final aspect = sourceWidth / sourceHeight;
     if (aspect <= minSourceAspect) {
       return const PanoramaEligibility._ineligible(
-        "This photo isn't wide enough for a panorama — it needs to be wider "
+        "This photo isn't wide enough for a panorama. It needs to be wider "
         'than 6:5.',
       );
     }
 
     if (sourceWidth < minTileWidth * minTiles) {
       return const PanoramaEligibility._ineligible(
-        'This photo is too low-resolution for a panorama — it needs to be at '
+        'This photo is too low-resolution for a panorama. It needs to be at '
         'least ${minTileWidth * minTiles}px wide.',
       );
     }
@@ -76,7 +76,7 @@ class PanoramaSpec {
     );
   }
 
-  /// 1-indexed numbers of tiles whose photo coverage is below 50% — see
+  /// 1-indexed numbers of tiles whose photo coverage is below 50%. See
   /// Smart Defaults B. Thin wrapper over [PanoramaGeometry], which owns the
   /// fit/fill placement maths for every caller.
   static List<int> emptyTiles({
@@ -99,7 +99,7 @@ class PanoramaSpec {
 
   /// Largest seam nudge (in tile widths) that moves the photo at all, given
   /// the current framing. Bounds the editor's seam slider so its track maps
-  /// 1:1 onto travel the render will honour — the previous fixed ±0.5 range
+  /// 1:1 onto travel the render will honour. The previous fixed ±0.5 range
   /// left most of the track inert whenever the photo nearly filled the canvas.
   static double maxCropOffsetX({
     required int tileCount,
@@ -125,7 +125,7 @@ class PanoramaSpec {
   /// Magnetic rather than stepped: the slider stays continuous so fine
   /// placement is still possible, and only the three positions that mean
   /// something get a pull. [snapFraction] is the catch radius as a share of
-  /// the full travel — small, because a snap that grabs from far away stops
+  /// the full travel. Small, because a snap that grabs from far away stops
   /// feeling like assistance and starts feeling like a control that won't do
   /// what it's told.
   static double snapCropOffsetY(
@@ -156,8 +156,8 @@ class PanoramaSpec {
     return value;
   }
 
-  /// Largest vertical nudge (in canvas heights) the current framing allows —
-  /// how much of the source Fill's crop is discarding above and below. Always
+  /// Largest vertical nudge (in canvas heights) the current framing allows.
+  /// How much of the source Fill's crop is discarding above and below. Always
   /// 0 in Fit, which crops nothing and stays vertically centred.
   static double maxCropOffsetY({
     required int tileCount,

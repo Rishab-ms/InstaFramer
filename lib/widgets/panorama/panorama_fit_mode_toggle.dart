@@ -9,7 +9,7 @@ import '../editor/control_button.dart';
 /// Fit / Fill toggle.
 ///
 /// Fit: contain-fit, leftover padded with the background, scale active.
-/// Fill: cover-fit + centre crop, no bars — background/scale controls are
+/// Fill: cover-fit + centre crop, no bars. Background/scale controls are
 /// removed from the tree by the caller, not just disabled.
 ///
 /// Built from [ControlButton] rather than the stock `SegmentedButton` so it

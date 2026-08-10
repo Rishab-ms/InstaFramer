@@ -23,8 +23,8 @@ class PanoramaInitialState extends PanoramaState {
 
 /// Terminal state when the picked source fails `PanoramaSpec.evaluate`.
 ///
-/// [reason] is the user-facing explanation, surfaced as a snackbar on Home —
-/// the editor is never pushed for an ineligible source.
+/// [reason] is the user-facing explanation, surfaced as a snackbar on Home.
+/// The editor is never pushed for an ineligible source.
 class PanoramaIneligibleState extends PanoramaState {
   final String reason;
 
@@ -47,7 +47,7 @@ class PanoramaReadyState extends PanoramaState {
   final PanoramaSettings settings;
 
   /// Up to 6 colors suggested from [source]'s own palette, offered alongside
-  /// White/Black/Blur — see `plans/color_picking.md`. Excluded from [props]:
+  /// White/Black/Blur. See `plans/color_picking.md`. Excluded from [props]:
   /// derived purely from [source], which is already in [props], so comparing
   /// it too would cost a list comparison on every settings change for no
   /// additional information.
@@ -87,7 +87,7 @@ class PanoramaReadyState extends PanoramaState {
 
 /// Export in progress. See [PanoramaExportPhase] for what the two phases mean.
 ///
-/// Deliberately does not carry `source`/`settings` — the processing view is a
+/// Deliberately does not carry `source`/`settings`: the processing view is a
 /// generic tile-count visualisation, not a live render of the photo, so
 /// nothing here duplicates the framer's `PhotosProcessingState.photos`
 /// approach.
@@ -120,7 +120,7 @@ class PanoramaExportedState extends PanoramaState {
 
 /// Terminal-per-attempt error state.
 ///
-/// [previous] is the [PanoramaReadyState] to return to — carried on the
+/// [previous] is the [PanoramaReadyState] to return to. Carried on the
 /// event/state rather than re-emitted via a `Future.delayed` cycle, which the
 /// Development Rules forbid (see `PhotoBloc._onExportAllPhotos` for the
 /// anti-pattern this avoids). The UI shows the error, then dispatches

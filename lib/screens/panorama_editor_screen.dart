@@ -19,11 +19,11 @@ import '../widgets/panorama/panorama_processing_view.dart';
 import '../widgets/panorama/panorama_tile_count_selector.dart';
 import 'panorama_instagram_preview_screen.dart';
 
-/// Panorama carousel editor — preview, controls, and export.
+/// Panorama carousel editor. Preview, controls, and export.
 ///
 /// Leaving this screen once a photo is loaded asks for confirmation, same
-/// as [EditorScreen] — see `_showLeaveConfirmationDialog`. A pop is disabled
-/// entirely while exporting — see [PanoramaProcessingView], which owns its
+/// as [EditorScreen]. See `_showLeaveConfirmationDialog`. A pop is disabled
+/// entirely while exporting. See [PanoramaProcessingView], which owns its
 /// own non-poppable `Scaffold` instead.
 class PanoramaEditorScreen extends StatelessWidget {
   const PanoramaEditorScreen({super.key});
@@ -32,7 +32,7 @@ class PanoramaEditorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<PanoramaBloc, PanoramaState>(
       // Only fire on the transition INTO a terminal state, mirroring
-      // EditorScreen's listenWhen — otherwise the success sheet / error
+      // EditorScreen's listenWhen. Otherwise the success sheet / error
       // snackbar would re-trigger on every unrelated rebuild.
       listenWhen: (previous, current) =>
           (previous is! PanoramaExportedState &&
@@ -51,7 +51,7 @@ class PanoramaEditorScreen extends StatelessWidget {
               duration: const Duration(seconds: 4),
             ),
           );
-          // The UI decides when to return to `previous` — not a
+          // The UI decides when to return to `previous`: not a
           // `Future.delayed` cycle inside the bloc. See PanoramaErrorState.
           context.read<PanoramaBloc>().add(const DismissPanoramaErrorEvent());
         }
@@ -66,7 +66,7 @@ class PanoramaEditorScreen extends StatelessWidget {
         }
 
         // A fresh PanoramaErrorState still has a ready screen to show behind
-        // the snackbar — render `previous` instead of a spinner flash while
+        // the snackbar. Render `previous` instead of a spinner flash while
         // DismissPanoramaErrorEvent is in flight.
         final readyState = state is PanoramaReadyState
             ? state
@@ -75,7 +75,7 @@ class PanoramaEditorScreen extends StatelessWidget {
             : null;
 
         return PopScope(
-          // Nothing to lose yet while still loading — only ask once a photo
+          // Nothing to lose yet while still loading, only ask once a photo
           // and settings actually exist to discard, mirroring EditorScreen.
           canPop: readyState == null,
           onPopInvokedWithResult: (didPop, result) async {
@@ -86,7 +86,7 @@ class PanoramaEditorScreen extends StatelessWidget {
 
             final shouldPop = await _showLeaveConfirmationDialog(context);
             if (shouldPop && context.mounted) {
-              // Pop before clearing bloc state — clearing first flips
+              // Pop before clearing bloc state. Clearing first flips
               // `readyState` to null, which flips this same PopScope's
               // `canPop` mid-flight and can cancel the in-flight pop
               // transition, leaving the screen stuck showing the loader
@@ -107,7 +107,7 @@ class PanoramaEditorScreen extends StatelessWidget {
     );
   }
 
-  /// Mirrors `EditorScreen._showLeaveConfirmationDialog` — same prompt shape
+  /// Mirrors `EditorScreen._showLeaveConfirmationDialog`: same prompt shape
   /// and button treatment, so leaving either editor reads as the same
   /// interaction rather than two different patterns for the same risk.
   Future<bool> _showLeaveConfirmationDialog(BuildContext context) async {
@@ -192,7 +192,7 @@ class PanoramaEditorScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      "In Instagram, tap them left to right — they're "
+                      "In Instagram, tap them left to right. They're "
                       'already in the right order.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall,
@@ -238,7 +238,7 @@ class PanoramaEditorScreen extends StatelessWidget {
 
 /// The editor's loaded state: preview on top, controls below.
 ///
-/// Stateful only to hold [_isPlacingVertically] — whether the user's finger is
+/// Stateful only to hold [_isPlacingVertically]. Whether the user's finger is
 /// currently on the vertical-position slider. That is transient interaction
 /// state, not a setting: it never survives the gesture, nothing else reads it,
 /// and putting it through `PanoramaBloc` would churn a state emission per
@@ -264,12 +264,12 @@ class _PanoramaReadyViewState extends State<_PanoramaReadyView> {
 
     return Column(
       children: [
-        // flex: 5/6 rather than "however tall the aspect ratio makes it" —
-        // a wide canvas ratio can otherwise render as a sliver at the top of
+        // flex: 5/6 rather than "however tall the aspect ratio makes it".
+        // A wide canvas ratio can otherwise render as a sliver at the top of
         // the screen with the rest of the height going to scrollable
         // controls that don't need it. Center+AspectRatio still contains the
         // photo correctly within this budget; a very wide canvas will still
-        // look short, because it genuinely is short — this just stops it
+        // look short, because it genuinely is short. This just stops it
         // being *artificially* short too.
         Expanded(
           flex: 5,
@@ -431,10 +431,10 @@ class _PanoramaReadyViewState extends State<_PanoramaReadyView> {
             ),
           ),
         ),
-        // Fixed footer, not part of the scrolling column — this is the
+        // Fixed footer, not part of the scrolling column. This is the
         // primary action and must stay reachable without scrolling, however
         // many controls are expanded above it. Exporting itself happens one
-        // screen further in, from the preview — see _openInstagramPreview.
+        // screen further in, from the preview. See _openInstagramPreview.
         DecoratedBox(
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
@@ -477,8 +477,8 @@ class _PanoramaReadyViewState extends State<_PanoramaReadyView> {
     List<Color> suggestedColors,
   ) {
     // A picked photo color is mutually exclusive with White/Black/Blur, so
-    // every pill's `isSelected` also requires no custom color being active —
-    // otherwise picking a color would leave e.g. "White" still highlighted.
+    // every pill's `isSelected` also requires no custom color being active.
+    // Otherwise picking a color would leave e.g. "White" still highlighted.
     final hasCustomColor = settings.backgroundColor != null;
 
     // Horizontal scroll rather than Wrap: up to 6 suggested-color chips on
@@ -554,14 +554,14 @@ class _PanoramaReadyViewState extends State<_PanoramaReadyView> {
     );
   }
 
-  /// Success sheet with the numbered tap-order grid — the only place the
+  /// Success sheet with the numbered tap-order grid. The only place the
   /// reverse-save trick (see `ExportService.exportPanorama`) can be explained
   /// to the user, since the actual carousel assembly happens in Instagram,
   /// outside our control. Rendered as real widgets sized to [tileCount], not
   /// a static image, so it stays correct at every tile count.
 }
 
-/// Renders [tileCount] numbered squares in save/tap order — the picture the
+/// Renders [tileCount] numbered squares in save/tap order. The picture the
 /// success sheet's copy is describing.
 class _TapOrderGrid extends StatelessWidget {
   final int tileCount;
@@ -596,7 +596,7 @@ class _TapOrderGrid extends StatelessWidget {
       }),
     );
 
-    // At the max 10 tiles this row can get tight on narrow phones — scroll
+    // At the max 10 tiles this row can get tight on narrow phones. Scroll
     // instead of clipping, but stay centred (via the minWidth constraint)
     // for the common case where it fits comfortably.
     return LayoutBuilder(
@@ -613,14 +613,14 @@ class _TapOrderGrid extends StatelessWidget {
   }
 }
 
-/// Vertical crop slider — which horizontal band of the photo Fill keeps.
+/// Vertical crop slider, which horizontal band of the photo Fill keeps.
 ///
 /// Fill mode's canvas is usually wider-aspect than the source, so the cover
 /// crop throws away the top and bottom. Centring that crop is a guess: a
 /// subject sitting high in frame gets its head cut and its feet padded. This
 /// is the control that lets the user say where the keeper band is.
 ///
-/// Fill-only by construction — [PanoramaSpec.maxCropOffsetY] returns 0 in Fit,
+/// Fill-only by construction, [PanoramaSpec.maxCropOffsetY] returns 0 in Fit,
 /// which crops nothing, so the slider would have no travel to offer there.
 class _VerticalPositionControl extends StatelessWidget {
   final PanoramaSettings settings;
@@ -666,7 +666,7 @@ class _VerticalPositionControl extends StatelessWidget {
         ),
         LabeledSlider(
           // Down-arrow leads because dragging left moves the photo up, which
-          // reveals more of the source's bottom — the icons label what the
+          // reveals more of the source's bottom. The icons label what the
           // end of the track shows you, not which way the photo travels.
           leadingIcon: Icons.keyboard_arrow_down,
           trailingIcon: Icons.keyboard_arrow_up,
@@ -675,7 +675,7 @@ class _VerticalPositionControl extends StatelessWidget {
           max: maxOffset,
           // Continuous, unlike the app's other sliders: the snap points below
           // are the meaningful stops here, and fixed divisions would compete
-          // with them — a stop every 5% that never quite lands on a third.
+          // with them. A stop every 5% that never quite lands on a third.
           divisions: null,
           valueLabel: hasTravel
               ? '${(value / maxOffset * 100).toStringAsFixed(0)}%'
@@ -690,7 +690,7 @@ class _VerticalPositionControl extends StatelessWidget {
                     canvasRatio: settings.canvasRatio,
                   );
                   // Tick only on arrival, not for every frame spent sitting on
-                  // a snap point — that is what makes it feel like the control
+                  // a snap point. That is what makes it feel like the control
                   // caught, rather than like a stuck buzz.
                   if (snapped != raw && snapped != settings.cropOffsetY) {
                     HapticFeedback.selectionClick();
@@ -716,7 +716,7 @@ class _VerticalPositionControl extends StatelessWidget {
 ///
 /// The bound matters for honesty, not just polish: the photo can only slide
 /// as far as the gap between it and the canvas edge, so a fixed range left
-/// most of the track inert — dragging it moved the label but not the photo.
+/// most of the track inert. Dragging it moved the label but not the photo.
 /// The label reads as a share of available travel ("-60%" = 60% of the way to
 /// the left stop) because the underlying tile-width figure is meaningless
 /// without knowing what the stop is.
@@ -755,7 +755,7 @@ class _HorizontalPositionControl extends StatelessWidget {
               ? 'Move the photo left or right to choose where the slides '
                     'divide it.'
               : settings.fitMode == PanoramaFitMode.fit
-              ? 'The photo already fills the canvas — zoom out to give it '
+              ? 'The photo already fills the canvas. Zoom out to give it '
                     'room to slide.'
               : 'The photo is no wider than the canvas, so there is nothing '
                     'to slide.',
@@ -807,7 +807,7 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-/// A solid-color swatch for the photo's suggested background colors — no
+/// A solid-color swatch for the photo's suggested background colors, no
 /// label, since the color itself is the only information worth showing. The
 /// circle is sized up (rather than iconed-and-labelled like [ControlButton])
 /// so it reads as a color preview on its own.

@@ -30,7 +30,7 @@ InstaFrame is a mobile app that simplifies photo preparation for Instagram creat
 The core functionality allows you to select multiple photos and apply consistent Instagram-optimized framing with white, black, or blur backgrounds.
 
 ### 🌄 **Panorama Module**
-Split one wide or panoramic photo into several 4:5 tiles that you upload as a carousel — so the shot reads as one continuous panorama when swiped, instead of being posted as a 16:9 or 21:9 image that gets shown tiny in the feed.
+Split one wide or panoramic photo into several 4:5 tiles that you upload as a carousel, so the shot reads as one continuous panorama when swiped instead of being posted as a 16:9 or 21:9 image that gets shown tiny in the feed.
 
 ### 🎞️ **Coming Soon: Photo Strip Module (V2.0)**
 A planned feature to transform multiple photos into seamless carousel strips that flow together as one continuous visual story, automatically sliced into Instagram slides.
@@ -57,8 +57,8 @@ A planned feature to transform multiple photos into seamless carousel strips tha
 - **Smart Tile Count**: Suggests the number of tiles that best fits your photo, and lets you override it
 - **Fit or Fill**: *Fit* keeps every pixel and pads the edges with White/Black/Blur; *Fill* crops edge-to-edge for a full-bleed look
 - **Live Seam Guides**: See exactly where each tile boundary lands before you export
-- **Automatic Seam Placement**: Analyses the photo and positions tile boundaries over flat areas — sky, water, blank walls — instead of across faces and subjects
-- **Seam Nudge**: Override the automatic placement whenever you want something different
+- **Horizontal Position**: Slide the photo left or right to choose where the tile boundaries fall
+- **Vertical Position** (Fill only): Choose which band of the photo the crop keeps, with rule-of-thirds guides while you drag
 - **Quality Readout**: Shows each slide's output resolution as you change the tile count, and warns when edge tiles would come out mostly empty
 - **Guaranteed Order**: Tiles are saved so they appear left-to-right in Instagram's picker, ready to tap in sequence
 
@@ -161,12 +161,12 @@ git push origin v1.0.0
 
 ### 🌄 **Panorama Module**
 1. **Start a Panorama**: Tap "Create a Panorama Carousel" on the home screen, or share a single wide photo to InstaFrame and choose "Panorama Carousel" in the popup
-2. **Set the Tile Count**: The app suggests the count that best fits your photo — override it to trade padding for taller, more dramatic slices
+2. **Set the Tile Count**: The app suggests the count that best fits your photo. Override it to trade padding for taller, more dramatic slices
 3. **Choose Fit or Fill**: *Fit* keeps the whole photo and pads the edges; *Fill* crops to edge-to-edge with no bars
 4. **Adjust the Frame** (Fit only): Pick a White, Black, or Blur background and fine-tune the scale
-5. **Check the Seams**: The app already positions tile boundaries over the flattest parts of your photo — slide left or right if you'd rather place them yourself
+5. **Position the Photo**: It starts centred. Slide it left or right to move the tile boundaries, or up and down in Fill mode to pick which band the crop keeps
 6. **Export Tiles**: Save all tiles to your gallery in one tap
-7. **Upload in Order**: In Instagram, tap the tiles **left to right** — they're saved so the gallery grid already shows them in the right order, and numbered `_pano_01_of_04` so you can double-check
+7. **Upload in Order**: In Instagram, tap the tiles **left to right**. They're saved so the gallery grid already shows them in the right order, and numbered `_pano_01_of_04` so you can double-check
 
 *Requires a landscape photo wider than 6:5 and at least 2160px wide. Camera and location metadata isn't preserved in panorama tiles.*
 
@@ -213,7 +213,7 @@ lib/
     └── app_theme.dart      # Color schemes & typography
 ```
 
-*Note: Photo Strip module components (strip_bloc, strip_editor_screen, etc.) are planned, not yet built — see `plans/implementation_plan.md` for the full spec.*
+*Note: Photo Strip module components (strip_bloc, strip_editor_screen, etc.) are planned, not yet built. See `plans/implementation_plan.md` for the full spec.*
 
 ### 🛠️ Key Technologies
 
