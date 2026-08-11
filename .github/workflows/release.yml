@@ -9,6 +9,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # The default GITHUB_TOKEN is read-only when the repo's workflow
+    # permissions are set to "read repository contents". Creating a release
+    # and uploading the APK both need write access, without this the build
+    # succeeds and the "Create Release" step 403s at the very last step.
+    permissions:
+      contents: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v7
