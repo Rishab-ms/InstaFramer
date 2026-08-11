@@ -107,7 +107,7 @@ flutter build appbundle --release
 ## 📥 Download & Install
 
 ### Latest Release
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Rishab-ms/InstaFramer?style=for-the-badge)](https://github.com/Rishab-ms/InstaFramer/releases/latest)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Rishab-ms/InstaFramer?include_prereleases&style=for-the-badge)](https://github.com/Rishab-ms/InstaFramer/releases/latest)
 [![GitHub Release Downloads](https://img.shields.io/github/downloads/Rishab-ms/InstaFramer/total?style=for-the-badge)](https://github.com/Rishab-ms/InstaFramer/releases)
 
 **Download the latest APK:**

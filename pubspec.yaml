@@ -1,7 +1,7 @@
 name: insta_upload_helper
 description: "Instagram Photo Framing Helper - Batch process photos for Instagram"
 publish_to: 'none'
-version: 1.0.0
+version: 1.1.0+2
 
 environment:
   sdk: ^3.10.4
